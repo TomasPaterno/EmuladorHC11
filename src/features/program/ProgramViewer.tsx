@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LoadSummary, parseHexWord } from "../../ipc/emulator";
+import { LoadSummary } from "../../ipc/emulator";
+import {
+  parseCodeLine,
+  updateProgramByte,
+  updateProgramLineBytes,
+  updateProgramLineText,
+  updateProgramLineAddress,
+} from "./programSync";
 
 export const SAMPLE_PROGRAM_2000 = `1 0000
 2 2000
@@ -35,66 +42,8 @@ export const SAMPLE_LAB_ISA = `1 0000
 14 201A 01
 15 201B 7E 20 1B`;
 
-interface ParsedLine {
-  originalIndex: number;
-  raw: string;
-  address: number | null;
-  bytes: string[];
-  rest: string;
-}
-
 function hexWord(value: number) {
   return value.toString(16).toUpperCase().padStart(4, "0");
-}
-
-function parseListingLine(line: string, index: number): ParsedLine {
-  const trimmed = line.trim();
-  if (!trimmed) {
-    return {
-      originalIndex: index,
-      raw: line,
-      address: null,
-      bytes: [],
-      rest: "",
-    };
-  }
-
-  const tokens = trimmed.split(/\s+/);
-  let addr: number | null = null;
-  const bytes: string[] = [];
-  let restStartIndex = 0;
-
-  // Pattern: "1 2000 86 08" or "2000 86 08"
-  if (
-    tokens.length >= 2 &&
-    /^\d+$/.test(tokens[0]) &&
-    /^[0-9a-fA-F]{4}$/.test(tokens[1])
-  ) {
-    addr = parseHexWord(tokens[1]);
-    let i = 2;
-    while (i < tokens.length && /^[0-9a-fA-F]{2}$/.test(tokens[i])) {
-      bytes.push(tokens[i]);
-      i++;
-    }
-    restStartIndex = i;
-  } else if (/^[0-9a-fA-F]{4}$/.test(tokens[0])) {
-    addr = parseHexWord(tokens[0]);
-    let i = 1;
-    while (i < tokens.length && /^[0-9a-fA-F]{2}$/.test(tokens[i])) {
-      bytes.push(tokens[i]);
-      i++;
-    }
-    restStartIndex = i;
-  }
-
-  const rest = tokens.slice(restStartIndex).join(" ");
-  return {
-    originalIndex: index,
-    raw: line,
-    address: addr,
-    bytes,
-    rest,
-  };
 }
 
 interface ProgramViewerProps {
@@ -105,6 +54,15 @@ interface ProgramViewerProps {
   onOpenS19: () => void;
   onOpenListing: () => void;
   onLoadSample: (name: string, content: string) => void;
+  onWriteByte?: (address: number, value: number) => Promise<void>;
+  onUpdateProgramContent?: (newContent: string) => void;
+}
+
+interface EditingCell {
+  lineIndex: number;
+  field: "byte" | "bytes" | "instruction" | "address";
+  byteIndex?: number;
+  initialValue: string;
 }
 
 export function ProgramViewer({
@@ -115,16 +73,28 @@ export function ProgramViewer({
   onOpenS19,
   onOpenListing,
   onLoadSample,
+  onWriteByte,
+  onUpdateProgramContent,
 }: ProgramViewerProps) {
   const [autoScroll, setAutoScroll] = useState(true);
   const activeLineRef = useRef<HTMLTableRowElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [editing, setEditing] = useState<EditingCell | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editing]);
 
   const lines = useMemo(() => {
     if (!fileContent) return [];
     return fileContent
       .split(/\r?\n/)
-      .map((line, idx) => parseListingLine(line, idx));
+      .map((line, idx) => parseCodeLine(line, idx));
   }, [fileContent]);
 
   // Find line corresponding to current PC
@@ -160,6 +130,79 @@ export function ProgramViewer({
       });
     }
   }, [activeLineIndex, autoScroll]);
+
+  async function handleCommit() {
+    if (!editing || !fileContent) {
+      setEditing(null);
+      return;
+    }
+
+    const { lineIndex, field, byteIndex } = editing;
+    const targetLine = lines[lineIndex];
+    if (!targetLine) {
+      setEditing(null);
+      return;
+    }
+
+    const trimmed = editValue.trim();
+
+    try {
+      if (
+        field === "byte" &&
+        typeof byteIndex === "number" &&
+        targetLine.address !== null
+      ) {
+        const targetAddr = targetLine.address + byteIndex;
+        const hexClean = trimmed.replace(/^(\$|0x)/i, "");
+        let parsedVal = parseInt(hexClean, 16);
+        if (Number.isNaN(parsedVal)) {
+          parsedVal = parseInt(trimmed, 10);
+        }
+        if (!Number.isNaN(parsedVal) && parsedVal >= 0 && parsedVal <= 255) {
+          await onWriteByte?.(targetAddr, parsedVal);
+          const updated = updateProgramByte(fileContent, targetAddr, parsedVal);
+          if (updated) {
+            onUpdateProgramContent?.(updated);
+          }
+        }
+      } else if (field === "bytes" && targetLine.address !== null) {
+        const byteTokens = trimmed.split(/\s+/).filter(Boolean);
+        const result = updateProgramLineBytes(
+          fileContent,
+          lineIndex,
+          byteTokens,
+        );
+        if (result) {
+          for (const write of result.writes) {
+            await onWriteByte?.(write.address, write.value);
+          }
+          onUpdateProgramContent?.(result.updatedContent);
+        }
+      } else if (field === "instruction") {
+        const updated = updateProgramLineText(fileContent, lineIndex, trimmed);
+        onUpdateProgramContent?.(updated);
+      } else if (field === "address" && targetLine.address !== null) {
+        const hexClean = trimmed.replace(/^(\$|0x)/i, "");
+        const parsedAddr = parseInt(hexClean, 16);
+        if (
+          !Number.isNaN(parsedAddr) &&
+          parsedAddr >= 0 &&
+          parsedAddr <= 0xffff
+        ) {
+          const updated = updateProgramLineAddress(
+            fileContent,
+            lineIndex,
+            parsedAddr,
+          );
+          onUpdateProgramContent?.(updated);
+        }
+      }
+    } catch {
+      // Ignorar errores en edición manual
+    } finally {
+      setEditing(null);
+    }
+  }
 
   return (
     <section
@@ -255,16 +298,22 @@ export function ProgramViewer({
                 <th
                   scope="col"
                   className="w-24 px-2.5 py-1.5 text-left font-bold"
+                  title="Doble clic para editar dirección"
                 >
                   Dir
                 </th>
                 <th
                   scope="col"
                   className="w-32 px-2.5 py-1.5 text-left font-bold"
+                  title="Doble clic en un byte o en la celda para editar"
                 >
                   Bytes
                 </th>
-                <th scope="col" className="px-2.5 py-1.5 text-left font-bold">
+                <th
+                  scope="col"
+                  className="px-2.5 py-1.5 text-left font-bold"
+                  title="Doble clic para editar instrucción"
+                >
                   Instrucción
                 </th>
               </tr>
@@ -272,6 +321,13 @@ export function ProgramViewer({
             <tbody>
               {lines.map((line, idx) => {
                 const isActive = idx === activeLineIndex;
+                const isEditingAddr =
+                  editing?.lineIndex === idx && editing.field === "address";
+                const isEditingBytes =
+                  editing?.lineIndex === idx && editing.field === "bytes";
+                const isEditingInst =
+                  editing?.lineIndex === idx && editing.field === "instruction";
+
                 return (
                   <tr
                     key={idx}
@@ -297,20 +353,171 @@ export function ProgramViewer({
                     </td>
 
                     {/* Address */}
-                    <td className="px-2.5 py-1.5 font-mono text-amber-400 font-bold text-sm sm:text-base">
-                      {line.address !== null
-                        ? `$${hexWord(line.address)}`
-                        : "—"}
+                    <td
+                      onDoubleClick={() => {
+                        if (line.address !== null) {
+                          setEditing({
+                            lineIndex: idx,
+                            field: "address",
+                            initialValue: hexWord(line.address),
+                          });
+                          setEditValue(hexWord(line.address));
+                        }
+                      }}
+                      title={
+                        line.address !== null
+                          ? "Doble clic para editar dirección"
+                          : undefined
+                      }
+                      className="px-2.5 py-1.5 font-mono text-amber-400 font-bold text-sm sm:text-base cursor-pointer hover:bg-amber-400/10 rounded transition-colors"
+                    >
+                      {isEditingAddr ? (
+                        <input
+                          ref={editInputRef}
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") void handleCommit();
+                            if (e.key === "Escape") setEditing(null);
+                          }}
+                          onBlur={() => void handleCommit()}
+                          className="w-20 rounded bg-slate-800 border border-amber-400 px-1 py-0.5 text-xs sm:text-sm font-mono text-amber-300 font-bold focus:outline-none focus:ring-1 focus:ring-amber-400"
+                        />
+                      ) : line.address !== null ? (
+                        `$${hexWord(line.address)}`
+                      ) : (
+                        "—"
+                      )}
                     </td>
 
                     {/* Bytes */}
-                    <td className="px-2.5 py-1.5 font-mono text-slate-200 text-sm sm:text-base font-semibold">
-                      {line.bytes.length > 0 ? line.bytes.join(" ") : ""}
+                    <td
+                      onDoubleClick={(e) => {
+                        if (
+                          e.target === e.currentTarget &&
+                          line.bytes.length > 0 &&
+                          line.address !== null
+                        ) {
+                          setEditing({
+                            lineIndex: idx,
+                            field: "bytes",
+                            initialValue: line.bytes.join(" "),
+                          });
+                          setEditValue(line.bytes.join(" "));
+                        }
+                      }}
+                      title={
+                        line.bytes.length > 0
+                          ? "Doble clic en un byte para editarlo individualmente"
+                          : undefined
+                      }
+                      className="px-2.5 py-1.5 font-mono text-slate-200 text-sm sm:text-base font-semibold"
+                    >
+                      {isEditingBytes ? (
+                        <input
+                          ref={editInputRef}
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") void handleCommit();
+                            if (e.key === "Escape") setEditing(null);
+                          }}
+                          onBlur={() => void handleCommit()}
+                          className="w-32 rounded bg-slate-800 border border-amber-400 px-1 py-0.5 text-xs sm:text-sm font-mono text-amber-300 font-bold focus:outline-none focus:ring-1 focus:ring-amber-400"
+                        />
+                      ) : line.bytes.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {line.bytes.map((byteHex, bIdx) => {
+                            const isThisByteEditing =
+                              editing?.lineIndex === idx &&
+                              editing.field === "byte" &&
+                              editing.byteIndex === bIdx;
+
+                            if (isThisByteEditing) {
+                              return (
+                                <input
+                                  key={bIdx}
+                                  ref={editInputRef}
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") void handleCommit();
+                                    if (e.key === "Escape") setEditing(null);
+                                  }}
+                                  onBlur={() => void handleCommit()}
+                                  className="w-10 rounded bg-slate-800 border border-amber-400 px-1 py-0.5 text-xs sm:text-sm font-mono text-amber-300 text-center font-bold focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                />
+                              );
+                            }
+
+                            const byteAddr =
+                              line.address !== null
+                                ? line.address + bIdx
+                                : null;
+                            return (
+                              <span
+                                key={bIdx}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation();
+                                  if (line.address !== null) {
+                                    setEditing({
+                                      lineIndex: idx,
+                                      field: "byte",
+                                      byteIndex: bIdx,
+                                      initialValue: byteHex,
+                                    });
+                                    setEditValue(byteHex);
+                                  }
+                                }}
+                                title={
+                                  byteAddr !== null
+                                    ? `Doble clic para editar byte en $${hexWord(byteAddr)}`
+                                    : "Doble clic para editar byte"
+                                }
+                                className="inline-block px-1 py-0.5 rounded cursor-pointer hover:bg-amber-400/25 hover:text-amber-200 border border-transparent hover:border-amber-400/40 transition-colors"
+                              >
+                                {byteHex}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        ""
+                      )}
                     </td>
 
                     {/* Instruction / text */}
-                    <td className="px-2.5 py-1.5 text-slate-100 text-sm sm:text-base font-medium">
-                      {line.address !== null ? line.rest : line.raw}
+                    <td
+                      onDoubleClick={() => {
+                        const textToEdit =
+                          line.address !== null ? line.rest : line.raw;
+                        setEditing({
+                          lineIndex: idx,
+                          field: "instruction",
+                          initialValue: textToEdit,
+                        });
+                        setEditValue(textToEdit);
+                      }}
+                      title="Doble clic para editar instrucción o comentario"
+                      className="px-2.5 py-1.5 text-slate-100 text-sm sm:text-base font-medium cursor-pointer hover:bg-slate-800/40 rounded transition-colors"
+                    >
+                      {isEditingInst ? (
+                        <input
+                          ref={editInputRef}
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") void handleCommit();
+                            if (e.key === "Escape") setEditing(null);
+                          }}
+                          onBlur={() => void handleCommit()}
+                          className="w-full rounded bg-slate-800 border border-amber-400 px-1.5 py-0.5 text-xs sm:text-sm font-mono text-amber-300 font-medium focus:outline-none focus:ring-1 focus:ring-amber-400"
+                        />
+                      ) : line.address !== null ? (
+                        line.rest
+                      ) : (
+                        line.raw
+                      )}
                     </td>
                   </tr>
                 );

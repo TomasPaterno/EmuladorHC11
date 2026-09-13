@@ -137,8 +137,10 @@ fn apply_s19(machine: &mut Machine, contents: &str) -> Result<LoadS19Result, Ipc
         .into());
     }
     let parsed: ParsedS19 = s19::parse_s19(contents)?;
-    machine.load_image(&parsed.bytes)?;
-    machine.reset();
+    let mut fresh = Machine::new_e9();
+    fresh.load_image(&parsed.bytes)?;
+    fresh.reset();
+    *machine = fresh;
     Ok(LoadS19Result {
         snapshot: CpuSnapshot::from(&*machine),
         summary: LoadSummary::from(&parsed.summary),
@@ -153,9 +155,11 @@ fn apply_listing(machine: &mut Machine, contents: &str) -> Result<LoadListingRes
         .into());
     }
     let parsed: ParsedListing = listing::parse_listing(contents)?;
-    machine.load_image(&parsed.bytes)?;
-    machine.reset();
-    machine.set_pc(parsed.summary.entry);
+    let mut fresh = Machine::new_e9();
+    fresh.load_image(&parsed.bytes)?;
+    fresh.reset();
+    fresh.set_pc(parsed.summary.entry);
+    *machine = fresh;
     Ok(LoadListingResult {
         snapshot: CpuSnapshot::from(&*machine),
         summary: ListingSummaryDto::from(&parsed.summary),
@@ -454,5 +458,22 @@ mod tests {
         assert_eq!(error.code, "load_rejected");
         assert_eq!(machine.cpu().pc, before.cpu().pc);
         assert_eq!(machine.cycles(), before.cycles());
+    }
+
+    #[test]
+    fn reload_listing_clears_modified_ram_and_overlay() {
+        use crate::ipc::listing::SAMPLE_LISTING;
+
+        let mut machine = Machine::new_e9();
+        apply_listing(&mut machine, SAMPLE_LISTING).expect("listado");
+        machine.run(65).expect("run");
+        assert_eq!(machine.bus().read_byte(0x3000), 1);
+        assert_eq!(machine.bus().read_byte(0x3009), 55);
+
+        // Al recargar el programa tras ejecución, la memoria se reinicia
+        apply_listing(&mut machine, SAMPLE_LISTING).expect("recargar listado");
+        assert_eq!(machine.bus().read_byte(0x3000), 0xFF);
+        assert_eq!(machine.bus().read_byte(0x0060), 0x00);
+        assert_eq!(machine.bus().read_byte(0x2000), 0x86);
     }
 }

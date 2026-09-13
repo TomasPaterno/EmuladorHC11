@@ -8,6 +8,7 @@ import { DraggableCard } from "./features/layout/DraggableCard";
 import { Splitter } from "./features/layout/Splitter";
 import { MemorySliceView } from "./features/memory/MemorySliceView";
 import { ProgramViewer } from "./features/program/ProgramViewer";
+import { updateProgramByte } from "./features/program/programSync";
 import { ExecutionToolbar } from "./features/toolbar/ExecutionToolbar";
 import { ManualLoadModal } from "./features/toolbar/ManualLoadModal";
 import { SettingsModal } from "./features/toolbar/SettingsModal";
@@ -306,6 +307,15 @@ export function App() {
     try {
       const result = await writeMemory(address, value);
       setSnapshot(result.snapshot);
+
+      // Si el byte modificado forma parte del código cargado, actualizar el listado
+      if (programContent) {
+        const updated = updateProgramByte(programContent, address, value);
+        if (updated && updated !== programContent) {
+          setProgramContent(updated);
+        }
+      }
+
       await Promise.all([
         fetchProgramSlice(programSliceStart),
         fetchDataSlice(dataSliceStart),
@@ -772,6 +782,10 @@ export function App() {
             onLoadSample={(name, content) => {
               void loadListingText(name, content);
             }}
+            onWriteByte={handleWriteByte}
+            onUpdateProgramContent={(newContent) =>
+              setProgramContent(newContent)
+            }
           />
         </div>
 
