@@ -185,7 +185,7 @@ export function ProgramViewer({
               )}
             </h2>
             {summary ? (
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="text-xs sm:text-sm text-slate-300 font-mono font-medium">
                 {summary.bytesLoaded} bytes · {summary.recordCount} registros ·{" "}
                 {summary.ranges.length > 0
                   ? summary.ranges
@@ -194,7 +194,7 @@ export function ProgramViewer({
                   : "sin rangos"}
               </p>
             ) : (
-              <p className="text-xs text-slate-500">Ningún archivo cargado</p>
+              <p className="text-xs text-slate-400">Ningún archivo cargado</p>
             )}
           </div>
         </div>
@@ -234,37 +234,37 @@ export function ProgramViewer({
       {/* Main Code Body */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto font-mono text-xs select-text bg-slate-950/70"
+        className="flex-1 overflow-y-auto font-mono text-sm sm:text-base select-text bg-slate-950/70"
       >
         {lines.length > 0 ? (
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/40 text-[11px] text-slate-500 select-none">
+              <tr className="border-b border-slate-800 bg-slate-900/40 text-xs sm:text-sm text-slate-400 select-none">
                 <th
                   scope="col"
-                  className="w-12 px-2.5 py-1.5 text-right font-bold text-slate-300 border-r border-slate-800/80"
+                  className="w-14 px-2.5 py-1.5 text-right font-bold text-slate-300 border-r border-slate-800/80"
                 >
                   #
                 </th>
                 <th
                   scope="col"
-                  className="w-6 px-1 py-1.5 text-center font-normal"
+                  className="w-8 px-1 py-1.5 text-center font-bold"
                 >
                   PC
                 </th>
                 <th
                   scope="col"
-                  className="w-16 px-2 py-1.5 text-left font-normal"
+                  className="w-24 px-2.5 py-1.5 text-left font-bold"
                 >
                   Dir
                 </th>
                 <th
                   scope="col"
-                  className="w-24 px-2 py-1.5 text-left font-normal"
+                  className="w-32 px-2.5 py-1.5 text-left font-bold"
                 >
                   Bytes
                 </th>
-                <th scope="col" className="px-2.5 py-1.5 text-left font-normal">
+                <th scope="col" className="px-2.5 py-1.5 text-left font-bold">
                   Instrucción
                 </th>
               </tr>
@@ -279,37 +279,37 @@ export function ProgramViewer({
                     className={`transition-colors border-b border-slate-900/60 ${
                       isActive
                         ? "bg-amber-400/20 text-amber-100 font-bold border-y border-amber-500/50 shadow-inner"
-                        : "hover:bg-slate-900/40 text-slate-300"
+                        : "hover:bg-slate-900/40 text-slate-200"
                     }`}
                   >
                     {/* Line number */}
-                    <td className="px-2.5 py-1 text-right font-mono text-xs font-semibold text-slate-300 select-none bg-slate-950/50 border-r border-slate-800/80">
+                    <td className="px-2.5 py-1.5 text-right font-mono text-sm sm:text-base font-bold text-slate-300 select-none bg-slate-950/50 border-r border-slate-800/80">
                       {idx + 1}
                     </td>
 
                     {/* PC Indicator */}
-                    <td className="px-1 py-1 text-center select-none">
+                    <td className="px-1 py-1.5 text-center select-none">
                       {isActive ? (
-                        <span className="inline-block text-amber-400 text-xs animate-pulse">
+                        <span className="inline-block text-amber-400 text-base font-black animate-pulse">
                           ▶
                         </span>
                       ) : null}
                     </td>
 
                     {/* Address */}
-                    <td className="px-2 py-1 font-mono text-amber-400 font-semibold text-xs">
+                    <td className="px-2.5 py-1.5 font-mono text-amber-400 font-bold text-sm sm:text-base">
                       {line.address !== null
                         ? `$${hexWord(line.address)}`
                         : "—"}
                     </td>
 
                     {/* Bytes */}
-                    <td className="px-2 py-1 font-mono text-slate-300 text-xs">
+                    <td className="px-2.5 py-1.5 font-mono text-slate-200 text-sm sm:text-base font-semibold">
                       {line.bytes.length > 0 ? line.bytes.join(" ") : ""}
                     </td>
 
                     {/* Instruction / text */}
-                    <td className="px-2.5 py-1 text-slate-200">
+                    <td className="px-2.5 py-1.5 text-slate-100 text-sm sm:text-base font-medium">
                       {line.address !== null ? line.rest : line.raw}
                     </td>
                   </tr>

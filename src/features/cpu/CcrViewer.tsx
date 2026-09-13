@@ -112,10 +112,10 @@ export function CcrViewer({
   const innerContent = (
     <>
       <div className="flex items-center gap-2 mb-2">
-        <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-xs font-medium text-amber-400">
+        <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-sm sm:text-base font-bold text-amber-400">
           ${rawCcr !== null ? hexByte(rawCcr) : "--"}
         </span>
-        <span className="font-mono text-xs text-slate-500">
+        <span className="font-mono text-xs sm:text-sm text-slate-400 font-semibold">
           %{rawCcr !== null ? binByte(rawCcr) : "--------"}
         </span>
       </div>
@@ -147,17 +147,17 @@ export function CcrViewer({
               }`}
               title={`${item.name}: ${item.fullName}`}
             >
-              <span className="text-[11px] font-bold tracking-tight">
+              <span className="text-xs sm:text-sm font-bold tracking-tight">
                 {item.name}
               </span>
               <span
-                className={`font-mono text-xs font-bold ${
-                  isSet ? "text-amber-400" : "text-slate-600"
+                className={`font-mono text-lg sm:text-xl font-black my-0.5 ${
+                  isSet ? "text-amber-400" : "text-slate-500"
                 }`}
               >
                 {flags ? (isSet ? "1" : "0") : "—"}
               </span>
-              <span className="text-[9px] text-slate-600">
+              <span className="text-[11px] sm:text-xs font-mono text-slate-400 font-medium">
                 b{item.bitIndex}
               </span>
             </div>
@@ -167,16 +167,16 @@ export function CcrViewer({
 
       {activeMeta ? (
         <div
-          className="mt-2.5 rounded border border-amber-500/40 bg-slate-950/80 px-3 py-1.5 text-xs transition-all"
+          className="mt-2.5 rounded-lg border border-amber-500/40 bg-slate-950/80 px-3.5 py-2 text-sm transition-all"
           aria-live="polite"
         >
           <div className="flex items-center gap-2">
-            <span className="font-bold text-amber-400">
+            <span className="font-bold text-amber-400 text-sm sm:text-base">
               Bit {activeMeta.bitIndex} ({activeMeta.name}) -{" "}
               {activeMeta.fullName}:
             </span>
             <span
-              className={`rounded px-1 text-[10px] font-semibold ${
+              className={`rounded px-1.5 py-0.5 text-xs sm:text-sm font-semibold ${
                 flags && flags[activeMeta.key]
                   ? "bg-amber-400/20 text-amber-300"
                   : "bg-slate-800 text-slate-400"
@@ -185,7 +185,7 @@ export function CcrViewer({
               {flags && flags[activeMeta.key] ? "1 (Activo)" : "0 (Inactivo)"}
             </span>
           </div>
-          <p className="mt-0.5 text-slate-300 leading-relaxed">
+          <p className="mt-1 text-slate-200 text-sm leading-relaxed font-medium">
             {activeMeta.description}
           </p>
         </div>

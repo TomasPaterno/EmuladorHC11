@@ -80,7 +80,7 @@ export function ManualLoadModal({
               Dirección inicial (Hex 16 bits):
             </label>
             <input
-              className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-xs text-slate-100 outline-none focus:border-amber-400"
+              className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-sm sm:text-base font-bold text-slate-100 outline-none focus:border-amber-400"
               value={startInput}
               onChange={(e) => setStartInput(e.target.value)}
               placeholder="ej. 0000 o 2000"
@@ -94,7 +94,7 @@ export function ManualLoadModal({
               Bytes hexadecimales:
             </label>
             <input
-              className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-xs text-slate-100 outline-none focus:border-amber-400"
+              className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-sm sm:text-base font-bold text-slate-100 outline-none focus:border-amber-400"
               value={dataInput}
               onChange={(e) => setDataInput(e.target.value)}
               placeholder="ej. 86 55 4F"

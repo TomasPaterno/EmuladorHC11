@@ -10,6 +10,7 @@ import { MemorySliceView } from "./features/memory/MemorySliceView";
 import { ProgramViewer } from "./features/program/ProgramViewer";
 import { ExecutionToolbar } from "./features/toolbar/ExecutionToolbar";
 import { ManualLoadModal } from "./features/toolbar/ManualLoadModal";
+import { SettingsModal } from "./features/toolbar/SettingsModal";
 import {
   CpuSnapshot,
   ExecutionResult,
@@ -95,6 +96,68 @@ export function App() {
   >({});
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [dragOverBlockId, setDragOverBlockId] = useState<string | null>(null);
+
+  // Theme Mode (Dark / Light)
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    try {
+      const saved = localStorage.getItem("hc11_theme");
+      if (saved === "light" || saved === "dark") return saved;
+    } catch {
+      // ignore
+    }
+    return "dark";
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("theme-light", theme === "light");
+    try {
+      localStorage.setItem("hc11_theme", theme);
+    } catch {
+      // ignore
+    }
+  }, [theme]);
+
+  // Font scale (85% - 135%)
+  const [fontScale, setFontScale] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("hc11_font_scale");
+      if (saved) {
+        const val = Number.parseInt(saved, 10);
+        if (!Number.isNaN(val) && val >= 85 && val <= 135) return val;
+      }
+    } catch {
+      // ignore
+    }
+    return 100;
+  });
+
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${(fontScale / 100) * 16}px`;
+    try {
+      localStorage.setItem("hc11_font_scale", String(fontScale));
+    } catch {
+      // ignore
+    }
+  }, [fontScale]);
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  function handleResetLayout() {
+    setBlockOrder(DEFAULT_BLOCK_ORDER);
+    setFilePanelWidth(DEFAULT_PANEL_WIDTH);
+    setCollapsedBlocks({});
+    try {
+      localStorage.removeItem("hc11_block_order");
+      localStorage.removeItem("hc11_file_panel_width");
+    } catch {
+      // ignore
+    }
+  }
+
+  // Registers display format (Hex / Bin / Dec)
+  const [registersFormat, setRegistersFormat] = useState<"hex" | "bin" | "dec">(
+    "hex",
+  );
 
   // Program / Loaded File
   const [programName, setProgramName] = useState<string | null>(null);
@@ -443,11 +506,26 @@ export function App() {
             id={id}
             title="Registros Internos"
             badge={snapshot ? `Ciclos: ${snapshot.cycles}` : undefined}
+            headerExtra={
+              <button
+                type="button"
+                onClick={() =>
+                  setRegistersFormat((curr) =>
+                    curr === "hex" ? "bin" : curr === "bin" ? "dec" : "hex",
+                  )
+                }
+                className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-mono font-bold text-amber-400 transition-colors cursor-pointer"
+                title="Alternar formato Hexadecimal / Binario / Decimal para los registros"
+              >
+                {registersFormat.toUpperCase()}
+              </button>
+            }
             {...commonProps}
           >
             <CpuRegisters
               snapshot={snapshot}
               recentChanges={lastStep?.registers ?? []}
+              format={registersFormat}
               headless
             />
           </DraggableCard>
@@ -501,7 +579,7 @@ export function App() {
                 <button
                   type="button"
                   onClick={() => setFollowPc(!followPc)}
-                  className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors cursor-pointer ${
+                  className={`rounded px-2 py-0.5 text-xs font-semibold transition-colors cursor-pointer ${
                     followPc
                       ? "bg-amber-400/20 text-amber-300 border border-amber-500/40"
                       : "bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700"
@@ -518,7 +596,7 @@ export function App() {
                       programSummary?.ranges?.[0]?.start ?? 0x2000;
                     void fetchProgramSlice(firstRange & 0xfff0);
                   }}
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
                   title="Ir al inicio del programa"
                 >
                   Inicio Prog
@@ -526,10 +604,12 @@ export function App() {
                 <button
                   type="button"
                   onClick={() =>
-                    setByteFormat((curr) => (curr === "hex" ? "bin" : "hex"))
+                    setByteFormat((curr) =>
+                      curr === "hex" ? "bin" : curr === "bin" ? "dec" : "hex",
+                    )
                   }
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] font-mono text-amber-400 transition-colors cursor-pointer"
-                  title="Alternar formato Hex / Bin"
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-mono font-bold text-amber-400 transition-colors cursor-pointer"
+                  title="Alternar formato Hex / Bin / Dec"
                 >
                   {byteFormat.toUpperCase()}
                 </button>
@@ -561,14 +641,14 @@ export function App() {
           <DraggableCard
             key={id}
             id={id}
-            title="Memoria en Sí (RAM / Datos / Pila)"
+            title="Memoria de Datos"
             {...commonProps}
             headerExtra={
               <div className="flex flex-wrap items-center gap-1">
                 <button
                   type="button"
                   onClick={() => void fetchDataSlice(0x0000)}
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
                   title="RAM interna ($0000)"
                 >
                   RAM $0000
@@ -582,7 +662,7 @@ export function App() {
                         : 0x0040;
                     void fetchDataSlice(target);
                   }}
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
                   title="Puntero de Pila (SP)"
                 >
                   Pila SP
@@ -590,7 +670,7 @@ export function App() {
                 <button
                   type="button"
                   onClick={() => void fetchDataSlice(0x1000)}
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
                   title="Registros de control I/O ($1000)"
                 >
                   I/O $1000
@@ -598,10 +678,12 @@ export function App() {
                 <button
                   type="button"
                   onClick={() =>
-                    setByteFormat((curr) => (curr === "hex" ? "bin" : "hex"))
+                    setByteFormat((curr) =>
+                      curr === "hex" ? "bin" : curr === "bin" ? "dec" : "hex",
+                    )
                   }
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] font-mono text-amber-400 transition-colors cursor-pointer"
-                  title="Alternar formato Hex / Bin"
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-mono font-bold text-amber-400 transition-colors cursor-pointer"
+                  title="Alternar formato Hex / Bin / Dec"
                 >
                   {byteFormat.toUpperCase()}
                 </button>
@@ -647,6 +729,11 @@ export function App() {
         onOpenS19={() => s19InputRef.current?.click()}
         onOpenListing={() => listingInputRef.current?.click()}
         onOpenManualLoad={() => setIsManualLoadOpen(true)}
+        theme={theme}
+        onToggleTheme={() =>
+          setTheme((curr) => (curr === "dark" ? "light" : "dark"))
+        }
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Dismissible Error Banner */}
@@ -745,6 +832,21 @@ export function App() {
         onClose={() => setIsManualLoadOpen(false)}
         onLoad={handleManualLoad}
         busy={busy}
+      />
+
+      {/* Settings & Font Customization Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        fontScale={fontScale}
+        onFontScaleChange={setFontScale}
+        theme={theme}
+        onThemeChange={setTheme}
+        registersFormat={registersFormat}
+        onRegistersFormatChange={setRegistersFormat}
+        memoryFormat={byteFormat}
+        onMemoryFormatChange={setByteFormat}
+        onResetLayout={handleResetLayout}
       />
     </div>
   );

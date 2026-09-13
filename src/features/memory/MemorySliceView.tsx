@@ -24,6 +24,9 @@ function formatDisplayByte(value: number, format: ByteFormat): string {
     const raw = value.toString(2).padStart(8, "0");
     return `${raw.slice(0, 4)} ${raw.slice(4)}`;
   }
+  if (format === "dec") {
+    return value.toString(10).padStart(3, " ");
+  }
   return hexByte(value);
 }
 
@@ -222,12 +225,12 @@ export function MemorySliceView({
 
           {/* Jump to address input */}
           <form onSubmit={handleJumpSubmit} className="flex items-center gap-1">
-            <div className="flex items-center rounded border border-slate-700 bg-slate-950 px-1.5 py-0.5 focus-within:border-amber-400">
-              <span className="text-amber-400 font-mono text-xs select-none mr-0.5">
+            <div className="flex items-center rounded border border-slate-700 bg-slate-950 px-2 py-0.5 focus-within:border-amber-400">
+              <span className="text-amber-400 font-mono text-sm font-bold select-none mr-0.5">
                 $
               </span>
               <input
-                className="w-14 bg-transparent font-mono text-xs font-bold text-amber-300 outline-none uppercase"
+                className="w-16 bg-transparent font-mono text-sm font-bold text-amber-300 outline-none uppercase"
                 value={jumpInput}
                 onChange={(e) => setJumpInput(e.target.value)}
                 placeholder={hexWord(view.start)}
@@ -236,7 +239,7 @@ export function MemorySliceView({
             </div>
             <button
               type="submit"
-              className="rounded bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+              className="rounded bg-slate-800 hover:bg-slate-700 px-2.5 py-0.5 text-xs sm:text-sm font-semibold text-slate-200 transition-colors cursor-pointer"
               title="Saltar a la dirección ingresada"
             >
               Ir
@@ -244,13 +247,13 @@ export function MemorySliceView({
           </form>
 
           {/* Large distance jump buttons */}
-          <div className="flex items-center gap-1 font-mono text-[11px]">
+          <div className="flex items-center gap-1 font-mono text-xs">
             <button
               type="button"
               onClick={() =>
                 onAddressChange((view.start - 0x100 + 0x10000) & 0xffff)
               }
-              className="rounded bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+              className="rounded bg-slate-800 hover:bg-slate-700 px-2 py-0.5 font-bold text-slate-300 hover:text-slate-100 transition-colors cursor-pointer"
               title="Retroceder 256 bytes (-$100)"
             >
               -$100
@@ -258,7 +261,7 @@ export function MemorySliceView({
             <button
               type="button"
               onClick={() => onAddressChange((view.start + 0x100) & 0xffff)}
-              className="rounded bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+              className="rounded bg-slate-800 hover:bg-slate-700 px-2 py-0.5 font-bold text-slate-300 hover:text-slate-100 transition-colors cursor-pointer"
               title="Avanzar 256 bytes (+$100)"
             >
               +$100
@@ -277,7 +280,7 @@ export function MemorySliceView({
               onClick={() =>
                 onAddressChange((view.start - COLUMNS + 0x10000) & 0xffff)
               }
-              className="px-2 py-0.5 text-xs text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-l cursor-pointer"
+              className="px-2 py-0.5 text-xs text-slate-300 hover:text-slate-100 hover:bg-slate-800 rounded-l cursor-pointer font-bold"
               title="Fila anterior (-$10)"
               aria-label="Fila anterior"
             >
@@ -286,7 +289,7 @@ export function MemorySliceView({
             <button
               type="button"
               onClick={() => onAddressChange((view.start + COLUMNS) & 0xffff)}
-              className="px-2 py-0.5 text-xs text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-r cursor-pointer"
+              className="px-2 py-0.5 text-xs text-slate-300 hover:text-slate-100 hover:bg-slate-800 rounded-r cursor-pointer font-bold"
               title="Fila siguiente (+$10)"
               aria-label="Fila siguiente"
             >
@@ -299,17 +302,17 @@ export function MemorySliceView({
       {/* Hex / Bin Grid Table with visible borders and distinct boxes for every cell */}
       <div className="w-full overflow-x-auto select-none">
         <table
-          className={`w-full border-separate font-mono text-xs select-none ${
+          className={`w-full border-separate font-mono select-none ${
             format === "bin"
-              ? "min-w-[1360px] border-spacing-x-2 border-spacing-y-1.5"
-              : "border-spacing-x-1 border-spacing-y-1"
+              ? "min-w-[1460px] border-spacing-x-2 border-spacing-y-1.5 text-xs sm:text-sm"
+              : "border-spacing-x-1.5 border-spacing-y-1 text-sm sm:text-base"
           }`}
         >
           <thead>
-            <tr className="text-slate-500">
+            <tr className="text-slate-400">
               <th
                 scope="col"
-                className="w-16 px-1 py-1 text-left font-semibold text-slate-400"
+                className="w-20 px-1.5 py-1 text-left font-bold text-xs sm:text-sm text-slate-400"
               >
                 Dir
               </th>
@@ -317,8 +320,8 @@ export function MemorySliceView({
                 <th
                   key={col}
                   scope="col"
-                  className={`py-1 text-center font-semibold text-[11px] text-slate-400 ${
-                    format === "bin" ? "w-20 min-w-[76px]" : "min-w-[28px]"
+                  className={`py-1 text-center font-bold text-xs sm:text-sm text-slate-400 ${
+                    format === "bin" ? "w-24 min-w-[84px]" : "min-w-[34px]"
                   }`}
                 >
                   {hexByte(col)}
@@ -333,7 +336,7 @@ export function MemorySliceView({
                 <tr key={rowAddr} className="hover:bg-slate-800/20">
                   <th
                     scope="row"
-                    className="w-16 px-1 py-1 text-left font-mono font-semibold text-slate-500 select-text"
+                    className="w-20 px-1.5 py-1 text-left font-mono font-bold text-sm sm:text-base text-slate-400 select-text"
                   >
                     ${hexWord(rowAddr)}
                   </th>
@@ -353,7 +356,7 @@ export function MemorySliceView({
                         {isEditing ? (
                           <input
                             autoFocus
-                            className="w-full rounded bg-slate-950 px-1 py-0.5 text-center font-bold text-amber-300 outline-none ring-1 ring-amber-400"
+                            className="w-full rounded bg-slate-950 px-1 py-0.5 text-center font-bold text-amber-300 outline-none ring-1 ring-amber-400 text-sm sm:text-base"
                             value={edit.draft}
                             onChange={(e) =>
                               setEdit({ index: idx, draft: e.target.value })
@@ -373,30 +376,32 @@ export function MemorySliceView({
                           <button
                             type="button"
                             onDoubleClick={() => beginEdit(idx)}
-                            className={`w-full rounded-md border px-1 py-0.5 text-center transition-all cursor-pointer shadow-xs ${
+                            className={`w-full rounded-md border px-1 py-1 text-center transition-all cursor-pointer shadow-xs ${
                               isPc
-                                ? "border-amber-400 bg-amber-400 font-bold text-slate-950 shadow-sm"
+                                ? "border-amber-400 bg-amber-400 font-black text-slate-950 shadow-sm"
                                 : isWrite
-                                  ? "border-cyan-400 bg-cyan-600 font-bold text-slate-50 ring-1 ring-cyan-400"
-                                  : "border-slate-800 bg-slate-950/80 text-slate-200 hover:border-amber-400/60 hover:bg-slate-800/80"
+                                  ? "border-cyan-400 bg-cyan-600 font-black text-white ring-1 ring-cyan-400"
+                                  : "border-slate-800 bg-slate-950/80 text-slate-100 hover:border-amber-400/60 hover:bg-slate-800/80 font-bold"
                             } ${
                               format === "bin"
-                                ? "min-w-[76px] py-1 text-[11px]"
-                                : "min-w-[28px] text-xs font-semibold"
+                                ? "min-w-[84px] text-xs sm:text-sm tracking-tight"
+                                : format === "dec"
+                                  ? "min-w-[38px] text-xs sm:text-sm tracking-tight"
+                                  : "min-w-[34px] text-sm sm:text-base tracking-normal"
                             }`}
                             title={`$${hexWord(addr)}: ${formatDisplayByte(
                               val,
                               format,
-                            )}${isPc ? " (PC)" : ""}${
+                            )} (dec: ${val})${isPc ? " (PC)" : ""}${
                               isWrite ? " (Escrito)" : ""
                             } - Doble clic para editar`}
                           >
                             {format === "bin" ? (
-                              <span className="inline-flex items-center justify-center gap-1 font-mono tracking-wider">
+                              <span className="inline-flex items-center justify-center gap-1 font-mono tracking-wider font-bold">
                                 <span>
                                   {val.toString(2).padStart(8, "0").slice(0, 4)}
                                 </span>
-                                <span className="text-slate-600 font-bold">
+                                <span className="text-slate-500 font-bold">
                                   ·
                                 </span>
                                 <span>
