@@ -5,7 +5,7 @@ interfaz usa React/TypeScript y Tauri v2; el núcleo se implementará en Rust co
 biblioteca determinista e independiente de la interfaz.
 
 El núcleo E9 ejecuta reset, carga de bytes o de un S19 de sesión, Step/Run
-de la ola 1 de la ISA (~102 filas de E5 Table 4-2) y un visor hex de 256
+de 172 filas verificadas de E5 Table 4-2 y un visor hex de 256
 bytes con el último cambio. El resto de la ISA y los periféricos todavía no
 están implementados.
 

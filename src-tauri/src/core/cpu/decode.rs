@@ -22,6 +22,22 @@ pub enum Mode {
     Rel,
 }
 
+#[cfg(test)]
+impl Mode {
+    /// Nombre de modo en `instructions.yaml`. IMM de 16 bits se transcribe como IMM.
+    pub fn spec_name(self) -> &'static str {
+        match self {
+            Mode::Inh => "INH",
+            Mode::Imm | Mode::Imm16 => "IMM",
+            Mode::Dir => "DIR",
+            Mode::Ext => "EXT",
+            Mode::IndX => "INDX",
+            Mode::IndY => "INDY",
+            Mode::Rel => "REL",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Acc {
     A,
@@ -367,6 +383,29 @@ fn page_1a(pc: u16, op: u8) -> Result<Decoded, CoreError> {
         bytes: row.3,
         cycles: row.4,
     })
+}
+
+/// Inventario de filas decodificables. Usado por el candado YAML↔decode.
+#[cfg(test)]
+pub fn implemented_rows() -> Vec<Decoded> {
+    let mut rows = Vec::new();
+    for opcode in 0u8..=255 {
+        if let Ok(row) = page_0(0, opcode) {
+            rows.push(row);
+        }
+    }
+    for decoder in [
+        page_18 as fn(u16, u8) -> Result<Decoded, CoreError>,
+        page_1a,
+        page_cd,
+    ] {
+        for opcode in 0u8..=255 {
+            if let Ok(row) = decoder(0, opcode) {
+                rows.push(row);
+            }
+        }
+    }
+    rows
 }
 
 fn page_cd(pc: u16, op: u8) -> Result<Decoded, CoreError> {

@@ -1,12 +1,14 @@
 # Especificación estructurada
 
-Estos YAML son datos de revisión, no entrada automática del emulador:
+Estos YAML son datos de revisión, no entrada automática del emulador. CI
+**compara** las filas `human_verified` con el inventario de decode, los
+ciclos/CCR ejecutados y las constantes E9; no genera `decode.rs`.
 
 - `variants.yaml`: capacidades por dispositivo.
 - `cpu-registers.yaml`: modelo CPU común.
 - `memory-map.yaml`: mapa al salir de reset por perfil.
 - `interrupt-vectors.yaml`: direcciones de vectores.
-- `instructions.yaml`: ola 1 de Table 4-2 (opcode, modo, ciclos, CCR).
+- `instructions.yaml`: 172 filas de Table 4-2 (opcode, modo, ciclos, CCR).
 
 Estados `transcribed_needs_visual_check` y `pending_*` bloquean generación de
 código. Una entrada sólo podrá pasar a `human_verified` después de comparar

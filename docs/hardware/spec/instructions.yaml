@@ -3,8 +3,9 @@ policy: ../../decisions/0004-source-policy.md
 document: E5
 section: "4.6, Table 4-2"
 note: >
-  Ola 1 (~100 filas opcode+modo) transcrita tras revisión visual de
-  E5 pp. 80-87. No es entrada automática del emulador.
+  172 filas opcode+modo transcritas tras revisión visual de E5 pp. 80-87
+  (ola 1 y ola de laboratorio). No generan decode.rs: CI compara este YAML
+  con el inventario de decode y con el contrato de ciclos/CCR.
 instructions:
   - mnemonic: NOP
     mode: INH
@@ -2660,7 +2661,7 @@ instructions:
         n: update,
         z: update,
         v: update,
-        c: unchanged,
+        c: update,
       }
     source:
       source_id: E5

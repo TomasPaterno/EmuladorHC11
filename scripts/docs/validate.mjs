@@ -88,6 +88,25 @@ for (const file of readdirSync(specDirectory).filter((name) =>
     }
   });
 
+  if (file === "instructions.yaml") {
+    const rows = data.instructions ?? [];
+    if (!Array.isArray(rows) || rows.length === 0) {
+      errors.push("instructions.yaml: debe declarar instructions no vacío");
+    }
+    for (const row of rows) {
+      if (row.review_status !== "human_verified") {
+        errors.push(
+          `instructions.yaml: ${row.mnemonic} ${row.mode} no está human_verified`,
+        );
+      }
+      if (!row.source?.source_id) {
+        errors.push(
+          `instructions.yaml: ${row.mnemonic} ${row.mode} sin source_id`,
+        );
+      }
+    }
+  }
+
   if (file === "interrupt-vectors.yaml") {
     for (const entry of data.e_series?.entries ?? []) {
       if (

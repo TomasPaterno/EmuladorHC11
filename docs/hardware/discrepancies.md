@@ -28,6 +28,35 @@
 - Decisión: perfiles y mapas independientes. Nunca se hereda capacidad de una
   familia por similitud del núcleo CPU.
 
+## D-004 — Reset determinista de A, B, X, Y y SP
+
+- Estado: abierta, decisión de emulador
+- Variante: MC68HC11E9
+- Fuente: E5 §5.3.1, printed/pdf p. 94 (`visual_review: true`, 2026-09-13)
+- Hecho: tras reset, SP y los demás registros CPU son indeterminados; solo
+  CCR.S, CCR.X y CCR.I quedan establecidos.
+- Código: `Registers::after_reset` fuerza A, B, X, Y y SP a 0 para que Step/Run
+  sean reproducibles.
+- Impacto: un programa que lea esos registros antes de inicializarlos verá 0
+  en lugar de un valor indefinido de silicio.
+- Resolución: se conserva el cero determinista. No se presenta como valor
+  documentado por E5. `foundation.md` sigue prohibiendo inventar valores
+  iniciales; este caso es una excepción explícita de emulador.
+
+## D-005 — Overlay de sesión fuera del mapa E9
+
+- Estado: abierta, decisión de emulador
+- Variante: MC68HC11E9
+- Fuente: E5 Figure 2-4, printed/pdf p. 37 (`visual_review: true`, 2026-09-13)
+- Hecho: en modo normal el E9 mapea RAM `$0000–$01FF`, registros `$1000–$103F`,
+  EEPROM `$B600–$B7FF` y ROM `$D000–$FFFF`. El resto es espacio externo.
+- Código: `Bus` escribe un overlay de sesión en direcciones no internas para
+  listings de laboratorio (`$2000` / `$3000`). No forma parte del mapa E9.
+- Impacto: un S19 o listado puede ejecutarse fuera de RAM/ROM internas; en
+  silicio esas direcciones exigirían bus externo.
+- Resolución: se conserva el overlay como ayuda de laboratorio. Las regiones
+  internas siguen a E5.
+
 ## Plantilla
 
 Cada nueva entrada debe incluir estado, variantes, ambas citas completas,

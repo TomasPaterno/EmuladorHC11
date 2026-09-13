@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Fecha de auditoría: 2026-09-12.
+Fecha de auditoría: 2026-09-13.
 
 Este documento fija el **objetivo** del emulador y el **punto de avance**
 respecto del código y las fuentes actuales. Complementa
@@ -26,21 +26,21 @@ perfil concreto. Hoy el único perfil ejecutable es E9.
 
 ## Dónde estamos
 
-| Fase | Nombre                                                       | Estado                            |
-| ---- | ------------------------------------------------------------ | --------------------------------- |
-| 0    | Fundación (scaffold, corpus, política de fuentes, CI)        | **Cerrada**                       |
-| 1    | Core mínimo E9 (registros, bus, INIT, reset, NOP, inspector) | **Cerrada**                       |
-| 2    | Instrucciones (decode, modos, flags, ciclos)                 | **En curso** — ola 1 (~102 filas) |
-| 3    | Periféricos                                                  | Pendiente                         |
-| 4    | Aplicación (depurador, memoria, desensamblado)               | Inspector con hex 256 B y diffs   |
-| 5    | Compatibilidad (ROMs de prueba, matriz de variantes)         | Pendiente                         |
+| Fase | Nombre                                                       | Estado                             |
+| ---- | ------------------------------------------------------------ | ---------------------------------- |
+| 0    | Fundación (scaffold, corpus, política de fuentes, CI)        | **Cerrada**                        |
+| 1    | Core mínimo E9 (registros, bus, INIT, reset, NOP, inspector) | **Cerrada**                        |
+| 2    | Instrucciones (decode, modos, flags, ciclos)                 | **En curso** — 172 filas Table 4-2 |
+| 3    | Periféricos                                                  | Pendiente                          |
+| 4    | Aplicación (depurador, memoria, desensamblado)               | Inspector con hex 256 B y diffs    |
+| 5    | Compatibilidad (ROMs de prueba, matriz de variantes)         | Pendiente                          |
 
-**Conclusión:** la Fase 2 tiene una ola 1 ejecutable. El núcleo decodifica
-por páginas, corre ~102 filas verificadas de Table 4-2, y el inspector muestra
-un volcado de 256 bytes más el último paso. El resto de la ISA, periféricos
-e interrupciones siguen fuera.
+**Conclusión:** la Fase 2 tiene 172 filas de Table 4-2 ejecutables y
+comparadas en CI contra `instructions.yaml`. El inspector muestra un volcado
+de 256 bytes más el último paso. El resto de la ISA, periféricos e
+interrupciones siguen fuera.
 
-## Auditoría rápida (2026-09-12)
+## Auditoría rápida (2026-09-13)
 
 ### Núcleo Rust (`src-tauri/src/core`)
 
@@ -52,8 +52,9 @@ Presente y acotado:
   ventana de escritura de 64 ciclos E.
 - Reset de modo normal: PC desde `$FFFE/$FFFF`, CCR con S, X e I; 3 ciclos de
   fetch del vector.
-- Decode por páginas `$00` y `$18`; prefijos `$1A`/`$CD` sin fila verificada
-  siguen en `unimplemented_opcode`.
+- Decode por páginas `$00` (127 filas), `$18` (41), `$1A` (2: LDY/STY INDX) y
+  `$CD` (2: LDX/STX INDY). El resto de prefijos sigue en
+  `unimplemented_opcode`.
 - `step` produce un `StepTrace` (PC, bytes, ciclos, registros/CCR que
   cambiaron, escrituras). Un opcode no implementado no muta el estado.
 - `run(max_steps)` (1…10_000) itera `step` y para por cupo o por opcode
@@ -65,7 +66,8 @@ Presente y acotado:
 
 Ausente:
 
-- Resto de Table 4-2 (MUL/DIV, DAA, BSET/BCLR/BR*, SWI/WAI/STOP, más modos).
+- Resto de Table 4-2 (DIV, DAA, SWI/WAI/STOP/RTI, BVC/BVS/BRN, modos B y
+  word que aún no están en `instructions.yaml`).
 - Carpeta `peripherals/`.
 - Manejo de interrupciones, modos distintos del reset normal y perfiles
   ejecutables distintos de E9.
@@ -99,7 +101,7 @@ primer rango S19 o dirección). La UI solo pinta `lastStep` y `memoryView`.
 Corpus local: `E31`, `E5` (autoridad E-series) y `RM3` (escaneo; no normativo
 hasta revisión visual). YAML de `docs/hardware/spec/` revisado a
 `human_verified` para E-series: variantes, registros, mapa e INIT, vectores
-y la ola 1 de `instructions.yaml`.
+y las 172 filas de `instructions.yaml`.
 
 Bloqueado para código:
 
@@ -108,12 +110,14 @@ Bloqueado para código:
 - OCR de RM3: no es evidencia.
 
 Discrepancias abiertas: D-001 (E5 Rev. 5 vs NXP 5.1), D-002 (paginación RM3),
-D-003 (A8 ≠ E-series).
+D-003 (A8 ≠ E-series), D-004 (reset determinista de A/B/X/Y/SP), D-005
+(overlay de sesión fuera del mapa E9).
 
 ### Calidad
 
 - `npm run check` es la puerta local y de CI (Windows, macOS, Ubuntu).
-- 61 pruebas unitarias Rust (ISA ola 1, decode, addressing, S19, IPC).
+- 92 pruebas Rust: ISA (ola 1, laboratorio y candado YAML↔decode/CCR/E9),
+  decode, addressing, S19 e IPC.
 - Sin pruebas de UI.
 - El repositorio Git no tiene commits; todo el árbol está sin historial.
 
