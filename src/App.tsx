@@ -1,7 +1,15 @@
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
-import { LastStepPanel, MemoryHex } from "./features/inspector/MemoryHex";
+import { CcrViewer } from "./features/cpu/CcrViewer";
+import { CpuRegisters } from "./features/cpu/CpuRegisters";
+import { LastStepTrace } from "./features/cpu/LastStepTrace";
 import { ByteFormat } from "./features/inspector/memoryFormat";
+import { DraggableCard } from "./features/layout/DraggableCard";
+import { Splitter } from "./features/layout/Splitter";
+import { MemorySliceView } from "./features/memory/MemorySliceView";
+import { ProgramViewer } from "./features/program/ProgramViewer";
+import { ExecutionToolbar } from "./features/toolbar/ExecutionToolbar";
+import { ManualLoadModal } from "./features/toolbar/ManualLoadModal";
 import {
   CpuSnapshot,
   ExecutionResult,
@@ -11,13 +19,10 @@ import {
   MemoryView,
   RunInfo,
   alignedRowStart,
-  alignedViewStart,
   inspectMemory,
   loadBytes,
   loadListing,
   loadS19,
-  parseHexBytes,
-  parseHexWord,
   parseIpcError,
   reset,
   run,
@@ -27,134 +32,383 @@ import {
 
 const S19_NAME = /\.(s19|srec|mot)$/i;
 const LISTING_NAME = /\.(lst|txt)$/i;
+const SLICE_BYTE_COUNT = 64;
+const DEFAULT_PANEL_WIDTH = 34; // 34% width for the program viewer by default
 
-type MemoryOrigin = "pc" | "s19" | "hex";
+const DEFAULT_BLOCK_ORDER = [
+  "registers",
+  "ccr",
+  "lastStep",
+  "memProgram",
+  "memData",
+];
 
 function hexByte(value: number) {
   return value.toString(16).toUpperCase().padStart(2, "0");
 }
 
-function hexWord(value: number) {
-  return value.toString(16).toUpperCase().padStart(4, "0");
+function formatError(error: IpcError) {
+  return `${error.code}: ${error.message}`;
 }
 
-function App() {
+export function App() {
   const [snapshot, setSnapshot] = useState<CpuSnapshot | null>(null);
-  const [memoryView, setMemoryView] = useState<MemoryView | null>(null);
   const [lastStep, setLastStep] = useState<LastStep | null>(null);
   const [runInfo, setRunInfo] = useState<RunInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [startInput, setStartInput] = useState("0000");
-  const [dataInput, setDataInput] = useState("01");
+
+  // Layout customization state
+  const [filePanelWidth, setFilePanelWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("hc11_file_panel_width");
+      if (saved) {
+        const val = Number.parseFloat(saved);
+        if (!Number.isNaN(val) && val >= 20 && val <= 65) return val;
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_PANEL_WIDTH;
+  });
+
+  const [blockOrder, setBlockOrder] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("hc11_block_order");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          Array.isArray(parsed) &&
+          parsed.length === DEFAULT_BLOCK_ORDER.length
+        ) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_BLOCK_ORDER;
+  });
+
+  const [collapsedBlocks, setCollapsedBlocks] = useState<
+    Record<string, boolean>
+  >({});
+  const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
+  const [dragOverBlockId, setDragOverBlockId] = useState<string | null>(null);
+
+  // Program / Loaded File
   const [programName, setProgramName] = useState<string | null>(null);
+  const [programContent, setProgramContent] = useState<string | null>(null);
   const [programSummary, setProgramSummary] = useState<LoadSummary | null>(
     null,
   );
-  const [origin, setOrigin] = useState<MemoryOrigin>("pc");
-  const [hexOrigin, setHexOrigin] = useState("0000");
+
+  // Memory Slices
+  const [programSliceStart, setProgramSliceStart] = useState<number>(0x2000);
+  const [programView, setProgramView] = useState<MemoryView | null>(null);
+  const [followPc, setFollowPc] = useState<boolean>(true);
+
+  const [dataSliceStart, setDataSliceStart] = useState<number>(0x0000);
+  const [dataView, setDataView] = useState<MemoryView | null>(null);
   const [byteFormat, setByteFormat] = useState<ByteFormat>("hex");
+
+  // Controls
   const [maxSteps, setMaxSteps] = useState("100");
-  const [cursor, setCursor] = useState(0);
-  const inspectGeneration = useRef(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isManualLoadOpen, setIsManualLoadOpen] = useState(false);
+
+  // File Inputs
+  const s19InputRef = useRef<HTMLInputElement>(null);
   const listingInputRef = useRef<HTMLInputElement>(null);
-  const loadS19ButtonRef = useRef<HTMLButtonElement>(null);
-  const loadListingButtonRef = useRef<HTMLButtonElement>(null);
 
-  function windowStartFor(
-    next: Pick<CpuSnapshot, "pc">,
-    ranges = programSummary?.ranges,
-  ): number | undefined {
-    if (origin === "hex") {
-      const parsed = parseHexWord(hexOrigin);
-      return parsed === null ? undefined : alignedRowStart(parsed);
-    }
-    if (origin === "s19" && ranges?.[0]) {
-      return alignedRowStart(ranges[0].start);
-    }
-    return alignedViewStart(next.pc);
-  }
+  // Generation tracking for memory fetches
+  const programInspectGen = useRef(0);
+  const dataInspectGen = useRef(0);
 
-  function pinnedWindowStart(
-    next: Pick<CpuSnapshot, "pc">,
-    ranges = programSummary?.ranges,
-  ): number | undefined {
-    if (origin === "pc") {
-      return undefined;
+  const writeSet = useMemo(() => {
+    const set = new Set<number>();
+    for (const write of lastStep?.writes ?? []) {
+      set.add(write.address);
     }
-    return windowStartFor(next, ranges);
-  }
+    return set;
+  }, [lastStep]);
 
-  async function applySnapshot(
-    next: CpuSnapshot,
-    view?: MemoryView,
-    clearTrace = false,
-  ) {
-    setSnapshot(next);
-    if (clearTrace) {
-      setLastStep(null);
-      setRunInfo(null);
-    }
-    if (view) {
-      setMemoryView(view);
-      return;
-    }
-    const start = windowStartFor(next) ?? alignedViewStart(next.pc);
-    await showWindow(start);
-  }
-
-  async function showWindow(start: number) {
-    const generation = inspectGeneration.current + 1;
-    inspectGeneration.current = generation;
-    const view = await inspectMemory(alignedRowStart(start), 256);
-    if (generation === inspectGeneration.current) {
-      setMemoryView(view);
+  async function fetchProgramSlice(start: number) {
+    const aligned = alignedRowStart(start);
+    const gen = ++programInspectGen.current;
+    try {
+      const view = await inspectMemory(aligned, SLICE_BYTE_COUNT);
+      if (gen === programInspectGen.current) {
+        setProgramSliceStart(aligned);
+        setProgramView(view);
+      }
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
     }
   }
 
-  async function applyExecution(result: ExecutionResult) {
-    setSnapshot(result.snapshot);
-    setLastStep(result.lastStep);
-    setRunInfo(result.run ?? null);
-    if (origin === "pc") {
-      setMemoryView(result.memoryView);
-      return;
+  async function fetchDataSlice(start: number) {
+    const aligned = alignedRowStart(start);
+    const gen = ++dataInspectGen.current;
+    try {
+      const view = await inspectMemory(aligned, SLICE_BYTE_COUNT);
+      if (gen === dataInspectGen.current) {
+        setDataSliceStart(aligned);
+        setDataView(view);
+      }
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
     }
-    const start = windowStartFor(result.snapshot);
-    if (start === undefined) {
-      setMemoryView(result.memoryView);
-      return;
-    }
-    await showWindow(start);
   }
 
-  async function runAction(action: () => Promise<void>) {
+  async function handleReset() {
     setBusy(true);
     try {
-      await action();
+      const next = await reset();
+      setSnapshot(next);
+      setLastStep(null);
+      setRunInfo(null);
       setError(null);
+      const initialProg =
+        programSummary?.ranges?.[0]?.start ?? alignedRowStart(next.pc);
+      setProgramSliceStart(initialProg);
+      await Promise.all([
+        fetchProgramSlice(initialProg),
+        fetchDataSlice(dataSliceStart),
+      ]);
     } catch (cause) {
-      const parsed = parseIpcError(cause);
-      setError(formatError(parsed));
+      setError(formatError(parseIpcError(cause)));
     } finally {
       setBusy(false);
     }
   }
 
+  async function handleStep() {
+    setBusy(true);
+    try {
+      const windowStart = followPc ? undefined : programSliceStart;
+      const result = await step(windowStart);
+      applyExecutionResult(result);
+      setError(null);
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRun() {
+    const limit = Number.parseInt(maxSteps, 10);
+    if (Number.isNaN(limit) || limit < 1) {
+      setError("El límite de pasos debe ser un número entero mayor a 0.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const windowStart = followPc ? undefined : programSliceStart;
+      const result = await run(limit, windowStart);
+      applyExecutionResult(result);
+      setError(null);
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function applyExecutionResult(result: ExecutionResult) {
+    setSnapshot(result.snapshot);
+    setLastStep(result.lastStep);
+    setRunInfo(result.run ?? null);
+
+    const targetPc = result.snapshot.pc;
+    const progStart = followPc ? alignedRowStart(targetPc) : programSliceStart;
+
+    void Promise.all([
+      fetchProgramSlice(progStart),
+      fetchDataSlice(dataSliceStart),
+    ]);
+  }
+
+  async function handleWriteByte(address: number, value: number) {
+    setBusy(true);
+    try {
+      const result = await writeMemory(address, value);
+      setSnapshot(result.snapshot);
+      await Promise.all([
+        fetchProgramSlice(programSliceStart),
+        fetchDataSlice(dataSliceStart),
+      ]);
+      setError(null);
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleManualLoad(start: number, data: number[]) {
+    setBusy(true);
+    try {
+      const next = await loadBytes(start, data);
+      setSnapshot(next);
+      await Promise.all([
+        fetchProgramSlice(start),
+        fetchDataSlice(dataSliceStart),
+      ]);
+      setError(null);
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadListingText(fileName: string, contents: string) {
+    setBusy(true);
+    try {
+      const result = await loadListing(contents);
+      setProgramName(fileName);
+      setProgramContent(contents);
+      setProgramSummary(result.summary);
+      setSnapshot(result.snapshot);
+      setLastStep(null);
+      setRunInfo(null);
+      setFollowPc(true);
+      const progStart = alignedRowStart(result.snapshot.pc);
+      setProgramSliceStart(progStart);
+      await Promise.all([
+        fetchProgramSlice(progStart),
+        fetchDataSlice(dataSliceStart),
+      ]);
+      setError(null);
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadS19Text(fileName: string, contents: string) {
+    setBusy(true);
+    try {
+      const result = await loadS19(contents);
+      setProgramName(fileName);
+      setProgramContent(contents);
+      setProgramSummary(result.summary);
+      setSnapshot(result.snapshot);
+      setLastStep(null);
+      setRunInfo(null);
+      setFollowPc(true);
+      const start = result.summary.ranges[0]
+        ? alignedRowStart(result.summary.ranges[0].start)
+        : alignedRowStart(result.snapshot.pc);
+      setProgramSliceStart(start);
+      await Promise.all([
+        fetchProgramSlice(start),
+        fetchDataSlice(dataSliceStart),
+      ]);
+      setError(null);
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onS19Selected(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.currentTarget.files?.[0];
+    e.currentTarget.value = "";
+    if (!file) return;
+    if (!S19_NAME.test(file.name)) {
+      setError(
+        "invalid_s19: use un archivo Motorola S19 (.s19, .srec o .mot).",
+      );
+      return;
+    }
+    const contents = await file.text();
+    await loadS19Text(file.name, contents);
+  }
+
+  async function onListingSelected(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.currentTarget.files?.[0];
+    e.currentTarget.value = "";
+    if (!file) return;
+    if (!LISTING_NAME.test(file.name)) {
+      setError("invalid_listing: use un listado compilado (.lst o .txt).");
+      return;
+    }
+    const contents = await file.text();
+    await loadListingText(file.name, contents);
+  }
+
+  // Reordering handlers
+  function moveBlock(fromIndex: number, toIndex: number) {
+    if (toIndex < 0 || toIndex >= blockOrder.length) return;
+    const newOrder = [...blockOrder];
+    const [moved] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, moved);
+    setBlockOrder(newOrder);
+    try {
+      localStorage.setItem("hc11_block_order", JSON.stringify(newOrder));
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleDragStart(e: React.DragEvent<HTMLDivElement>, id: string) {
+    e.dataTransfer.setData("text/plain", id);
+    setDraggedBlockId(id);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>, id: string) {
+    e.preventDefault();
+    if (draggedBlockId !== id) {
+      setDragOverBlockId(id);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>, targetId: string) {
+    e.preventDefault();
+    const sourceId = draggedBlockId || e.dataTransfer.getData("text/plain");
+    setDraggedBlockId(null);
+    setDragOverBlockId(null);
+    if (!sourceId || sourceId === targetId) return;
+
+    const sourceIndex = blockOrder.indexOf(sourceId);
+    const targetIndex = blockOrder.indexOf(targetId);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    moveBlock(sourceIndex, targetIndex);
+  }
+
+  function handleDragEnd() {
+    setDraggedBlockId(null);
+    setDragOverBlockId(null);
+  }
+
+  function toggleCollapse(id: string) {
+    setCollapsedBlocks((curr) => ({
+      ...curr,
+      [id]: !curr[id],
+    }));
+  }
+
+  // Initial reset on startup
   useEffect(() => {
     let cancelled = false;
     void reset()
       .then(async (next) => {
-        if (cancelled) {
-          return;
-        }
-        const view = await inspectMemory(alignedViewStart(next.pc), 256);
+        if (cancelled) return;
+        setSnapshot(next);
+        const pStart = alignedRowStart(next.pc);
+        setProgramSliceStart(pStart);
+        const [pView, dView] = await Promise.all([
+          inspectMemory(pStart, SLICE_BYTE_COUNT),
+          inspectMemory(0x0000, SLICE_BYTE_COUNT),
+        ]);
         if (!cancelled) {
-          setSnapshot(next);
-          setMemoryView(view);
-          setLastStep(null);
-          setRunInfo(null);
+          setProgramView(pView);
+          setDataView(dView);
           setError(null);
         }
       })
@@ -163,514 +417,341 @@ function App() {
           setError(formatError(parseIpcError(cause)));
         }
       });
+
     return () => {
       cancelled = true;
     };
   }, []);
 
-  function openS19Picker() {
-    fileInputRef.current?.click();
-  }
+  // Render individual block by ID
+  function renderBlock(id: string, index: number) {
+    const commonProps = {
+      isCollapsed: !!collapsedBlocks[id],
+      canMoveUp: index > 0,
+      canMoveDown: index < blockOrder.length - 1,
+      onToggleCollapse: () => toggleCollapse(id),
+      onMoveUp: () => moveBlock(index, index - 1),
+      onMoveDown: () => moveBlock(index, index + 1),
+      onDragStart: handleDragStart,
+      onDragOver: handleDragOver,
+      onDrop: handleDrop,
+      onDragEnd: handleDragEnd,
+      isDragOver: dragOverBlockId === id,
+    };
 
-  function openListingPicker() {
-    listingInputRef.current?.click();
-  }
+    switch (id) {
+      case "registers":
+        return (
+          <DraggableCard
+            key={id}
+            id={id}
+            title="Registros Internos"
+            badge={snapshot ? `Ciclos: ${snapshot.cycles}` : undefined}
+            {...commonProps}
+          >
+            <CpuRegisters
+              snapshot={snapshot}
+              recentChanges={lastStep?.registers ?? []}
+              headless
+            />
+          </DraggableCard>
+        );
 
-  async function onS19Selected(event: ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) {
-      return;
-    }
-    if (!S19_NAME.test(file.name)) {
-      setError(
-        "invalid_s19: use un archivo Motorola S19 (.s19, .srec o .mot).",
-      );
-      return;
-    }
-    setBusy(true);
-    try {
-      const contents = await file.text();
-      const result = await loadS19(contents);
-      setProgramName(file.name);
-      setProgramSummary(result.summary);
-      const start =
-        windowStartFor(result.snapshot, result.summary.ranges) ??
-        alignedViewStart(result.snapshot.pc);
-      await applySnapshot(
-        result.snapshot,
-        await inspectMemory(start, 256),
-        true,
-      );
-      setError(null);
-    } catch (cause) {
-      setError(formatError(parseIpcError(cause)));
-    } finally {
-      setBusy(false);
-      loadS19ButtonRef.current?.focus();
+      case "ccr":
+        return (
+          <DraggableCard
+            key={id}
+            id={id}
+            title="Registro CCR"
+            badge={snapshot ? `$${hexByte(snapshot.ccr)}` : "--"}
+            {...commonProps}
+          >
+            <CcrViewer
+              flags={snapshot?.ccrFlags ?? null}
+              rawCcr={snapshot?.ccr ?? null}
+              recentChanges={lastStep?.ccr ?? []}
+              headless
+            />
+          </DraggableCard>
+        );
+
+      case "lastStep":
+        return (
+          <DraggableCard
+            key={id}
+            id={id}
+            title="Último Paso"
+            badge={
+              lastStep
+                ? `${lastStep.mnemonic} (+${lastStep.cyclesAdded})`
+                : undefined
+            }
+            {...commonProps}
+          >
+            <LastStepTrace lastStep={lastStep} headless />
+          </DraggableCard>
+        );
+
+      case "memProgram":
+        return (
+          <DraggableCard
+            key={id}
+            id={id}
+            title="Memoria de Programa"
+            badge={followPc ? "Siguiendo PC" : "Fijada"}
+            {...commonProps}
+            headerExtra={
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setFollowPc(!followPc)}
+                  className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors cursor-pointer ${
+                    followPc
+                      ? "bg-amber-400/20 text-amber-300 border border-amber-500/40"
+                      : "bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700"
+                  }`}
+                  title="Sigue automáticamente al PC en cada instrucción"
+                >
+                  {followPc ? "● Seguir PC" : "Seguir PC"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFollowPc(false);
+                    const firstRange =
+                      programSummary?.ranges?.[0]?.start ?? 0x2000;
+                    void fetchProgramSlice(firstRange & 0xfff0);
+                  }}
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                  title="Ir al inicio del programa"
+                >
+                  Inicio Prog
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setByteFormat((curr) => (curr === "hex" ? "bin" : "hex"))
+                  }
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] font-mono text-amber-400 transition-colors cursor-pointer"
+                  title="Alternar formato Hex / Bin"
+                >
+                  {byteFormat.toUpperCase()}
+                </button>
+              </div>
+            }
+          >
+            <MemorySliceView
+              title="Memoria de Programa"
+              view={programView}
+              pc={snapshot?.pc ?? null}
+              writeSet={writeSet}
+              format={byteFormat}
+              busy={busy}
+              onAddressChange={(addr) => {
+                setFollowPc(false);
+                void fetchProgramSlice(addr);
+              }}
+              onWriteByte={(addr, val) => {
+                void handleWriteByte(addr, val);
+              }}
+              headless
+              hideTitle
+            />
+          </DraggableCard>
+        );
+
+      case "memData":
+        return (
+          <DraggableCard
+            key={id}
+            id={id}
+            title="Memoria en Sí (RAM / Datos / Pila)"
+            {...commonProps}
+            headerExtra={
+              <div className="flex flex-wrap items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => void fetchDataSlice(0x0000)}
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                  title="RAM interna ($0000)"
+                >
+                  RAM $0000
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target =
+                      snapshot?.sp !== undefined
+                        ? snapshot.sp & 0xfff0
+                        : 0x0040;
+                    void fetchDataSlice(target);
+                  }}
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                  title="Puntero de Pila (SP)"
+                >
+                  Pila SP
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void fetchDataSlice(0x1000)}
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                  title="Registros de control I/O ($1000)"
+                >
+                  I/O $1000
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setByteFormat((curr) => (curr === "hex" ? "bin" : "hex"))
+                  }
+                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-[11px] font-mono text-amber-400 transition-colors cursor-pointer"
+                  title="Alternar formato Hex / Bin"
+                >
+                  {byteFormat.toUpperCase()}
+                </button>
+              </div>
+            }
+          >
+            <MemorySliceView
+              title="Memoria de Datos"
+              view={dataView}
+              pc={snapshot?.pc ?? null}
+              writeSet={writeSet}
+              format={byteFormat}
+              busy={busy}
+              onAddressChange={(addr) => {
+                void fetchDataSlice(addr);
+              }}
+              onWriteByte={(addr, val) => {
+                void handleWriteByte(addr, val);
+              }}
+              headless
+              hideTitle
+            />
+          </DraggableCard>
+        );
+
+      default:
+        return null;
     }
   }
-
-  async function onListingSelected(event: ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) {
-      return;
-    }
-    if (!LISTING_NAME.test(file.name)) {
-      setError("invalid_listing: use un listado compilado (.lst o .txt).");
-      return;
-    }
-    setBusy(true);
-    try {
-      const contents = await file.text();
-      const result = await loadListing(contents);
-      setProgramName(file.name);
-      setProgramSummary(result.summary);
-      const start =
-        windowStartFor(result.snapshot, result.summary.ranges) ??
-        alignedViewStart(result.snapshot.pc);
-      await applySnapshot(
-        result.snapshot,
-        await inspectMemory(start, 256),
-        true,
-      );
-      setError(null);
-    } catch (cause) {
-      setError(formatError(parseIpcError(cause)));
-    } finally {
-      setBusy(false);
-      loadListingButtonRef.current?.focus();
-    }
-  }
-
-  function onLoad(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const start = parseHexWord(startInput);
-    const data = parseHexBytes(dataInput);
-    if (start === null || data === null) {
-      setError("Use una dirección de 16 bits y bytes hexadecimales.");
-      return;
-    }
-    void runAction(async () => {
-      const next = await loadBytes(start, data);
-      await applySnapshot(next);
-    });
-  }
-
-  function onInspectOrigin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!snapshot) {
-      return;
-    }
-    const start = windowStartFor(snapshot);
-    if (start === undefined) {
-      setError("Use una dirección de 16 bits para la ventana.");
-      return;
-    }
-    void runAction(async () => {
-      await showWindow(start);
-    });
-  }
-
-  function pinHexWindow(start: number, nextCursor: number) {
-    setOrigin("hex");
-    setHexOrigin(hexWord(alignedRowStart(start)));
-    setCursor(nextCursor);
-    void showWindow(start).catch((cause: unknown) => {
-      setError(formatError(parseIpcError(cause)));
-    });
-  }
-
-  function onWriteByte(address: number, value: number) {
-    void runAction(async () => {
-      const result = await writeMemory(
-        address,
-        value,
-        memoryView ? alignedRowStart(memoryView.start) : undefined,
-      );
-      setSnapshot(result.snapshot);
-      setMemoryView(result.memoryView);
-    });
-  }
-
-  function onRun(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const limit = Number.parseInt(maxSteps, 10);
-    void runAction(async () => {
-      const result = await run(
-        limit,
-        pinnedWindowStart({ pc: snapshot?.pc ?? 0 }),
-      );
-      await applyExecution(result);
-    });
-  }
-
-  const flags = snapshot?.ccrFlags;
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <header className="space-y-2">
-          <p className="text-sm font-semibold tracking-[0.3em] text-amber-400">
-            MC68HC11E9
-          </p>
-          <h1 className="text-3xl font-bold">Inspector del núcleo</h1>
-          <p className="max-w-2xl text-slate-400">
-            Reset, Step o Run. Cargue un S19 o un listado compilado (línea,
-            dirección, bytes). El volcado y el último paso salen del núcleo.
-          </p>
-        </header>
+    <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden select-none">
+      {/* Top Application Toolbar */}
+      <ExecutionToolbar
+        busy={busy}
+        cycles={snapshot?.cycles ?? 0}
+        runInfo={runInfo}
+        maxSteps={maxSteps}
+        onMaxStepsChange={setMaxSteps}
+        onReset={() => void handleReset()}
+        onStep={() => void handleStep()}
+        onRun={() => void handleRun()}
+        onOpenS19={() => s19InputRef.current?.click()}
+        onOpenListing={() => listingInputRef.current?.click()}
+        onOpenManualLoad={() => setIsManualLoadOpen(true)}
+      />
 
+      {/* Dismissible Error Banner */}
+      {error && (
         <div
-          className="flex flex-wrap items-end gap-3"
-          role="group"
-          aria-label="Control de ejecución"
+          role="alert"
+          className="flex items-center justify-between border-b border-red-500/40 bg-red-950/70 px-5 py-2 text-xs text-red-200"
         >
+          <span>
+            <strong>Error:</strong> {error}
+          </span>
           <button
             type="button"
-            className="rounded bg-amber-400 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50"
-            disabled={busy}
-            onClick={() =>
-              void runAction(async () => {
-                const next = await reset();
-                await applySnapshot(next, undefined, true);
-              })
-            }
+            onClick={() => setError(null)}
+            className="rounded px-2 py-0.5 font-bold hover:bg-red-900/60 cursor-pointer"
           >
-            Reset
+            ✕
           </button>
-          <button
-            type="button"
-            className="rounded border border-slate-500 px-4 py-2 font-semibold disabled:opacity-50"
-            disabled={busy}
-            onClick={() =>
-              void runAction(async () => {
-                const result = await step(
-                  pinnedWindowStart({ pc: snapshot?.pc ?? 0 }),
-                );
-                await applyExecution(result);
-              })
-            }
-          >
-            Step
-          </button>
-          <form
-            onSubmit={onRun}
-            className="flex flex-wrap items-end gap-2"
-            aria-labelledby="run-heading"
-          >
-            <h2 id="run-heading" className="sr-only">
-              Ejecutar
-            </h2>
-            <label className="grid gap-1 text-sm">
-              <span>Máx. pasos</span>
-              <input
-                className="w-24 rounded border border-slate-700 bg-slate-900 px-3 py-2 font-mono"
-                value={maxSteps}
-                onChange={(event) => setMaxSteps(event.target.value)}
-                inputMode="numeric"
-                aria-describedby="run-help"
-              />
-            </label>
-            <button
-              type="submit"
-              className="rounded bg-slate-100 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50"
-              disabled={busy}
-            >
-              Run
-            </button>
-          </form>
-          <button
-            ref={loadS19ButtonRef}
-            type="button"
-            className="rounded border border-amber-400/60 px-4 py-2 font-semibold disabled:opacity-50"
-            disabled={busy}
-            onClick={openS19Picker}
-          >
-            Cargar S19
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".s19,.srec,.mot,text/plain"
-            className="sr-only"
-            tabIndex={-1}
-            disabled={busy}
-            onChange={(event) => void onS19Selected(event)}
-            aria-hidden="true"
-          />
-          <button
-            ref={loadListingButtonRef}
-            type="button"
-            className="rounded border border-amber-400/60 px-4 py-2 font-semibold disabled:opacity-50"
-            disabled={busy}
-            onClick={openListingPicker}
-          >
-            Cargar listado
-          </button>
-          <input
-            ref={listingInputRef}
-            type="file"
-            accept=".lst,.txt,text/plain"
-            className="sr-only"
-            tabIndex={-1}
-            disabled={busy}
-            onChange={(event) => void onListingSelected(event)}
-            aria-hidden="true"
+        </div>
+      )}
+
+      {/* Main Split Body: Resizable 2 Columns */}
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-3 gap-0">
+        {/* Left Column: Loaded Program / File Viewer */}
+        <div
+          style={{ width: `${filePanelWidth}%` }}
+          className="w-full lg:w-auto h-1/2 lg:h-full flex flex-col overflow-hidden pr-0 lg:pr-1"
+        >
+          <ProgramViewer
+            fileName={programName}
+            fileContent={programContent}
+            summary={programSummary}
+            pc={snapshot?.pc ?? null}
+            onOpenS19={() => s19InputRef.current?.click()}
+            onOpenListing={() => listingInputRef.current?.click()}
+            onLoadSample={(name, content) => {
+              void loadListingText(name, content);
+            }}
           />
         </div>
-        <p id="run-help" className="text-sm text-slate-500">
-          Run se detiene al agotar el cupo o ante un opcode no implementado.
-        </p>
 
-        {error ? (
-          <p
-            role="alert"
-            className="rounded border border-red-500/40 bg-red-950/40 px-4 py-3"
-          >
-            {error}
-          </p>
-        ) : null}
+        {/* Draggable Splitter Divider */}
+        <Splitter
+          onResize={(newPercent) => {
+            setFilePanelWidth(newPercent);
+            try {
+              localStorage.setItem("hc11_file_panel_width", String(newPercent));
+            } catch {
+              // ignore
+            }
+          }}
+          onReset={() => {
+            setFilePanelWidth(DEFAULT_PANEL_WIDTH);
+            try {
+              localStorage.removeItem("hc11_file_panel_width");
+            } catch {
+              // ignore
+            }
+          }}
+        />
 
-        {runInfo ? (
-          <p className="text-sm text-slate-300">
-            Run: {runInfo.stepsTaken} pasos ·{" "}
-            {runInfo.stopReason === "limit"
-              ? "límite alcanzado"
-              : "opcode no implementado"}
-          </p>
-        ) : null}
-
-        <section aria-labelledby="registers-heading" className="space-y-3">
-          <h2 id="registers-heading" className="text-xl font-semibold">
-            Registros
-          </h2>
-          <table className="w-full max-w-xl border-collapse text-left">
-            <caption className="sr-only">Estado actual de la CPU</caption>
-            <tbody>
-              {registerRows(snapshot).map((row) => (
-                <tr key={row.label} className="border-b border-slate-800">
-                  <th
-                    scope="row"
-                    className="py-2 pr-4 font-medium text-slate-400"
-                  >
-                    {row.label}
-                  </th>
-                  <td className="py-2 font-mono">{row.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="font-mono text-sm text-slate-400">
-            CCR {flags ? flagLine(flags) : "—"} · INIT $
-            {snapshot ? hexByte(snapshot.init) : "--"} · ciclos{" "}
-            {snapshot?.cycles ?? "—"}
-          </p>
-        </section>
-
-        <section aria-labelledby="last-step-heading" className="space-y-2">
-          <h2 id="last-step-heading" className="text-xl font-semibold">
-            Último paso
-          </h2>
-          <LastStepPanel lastStep={lastStep} />
-        </section>
-
-        <section aria-labelledby="program-heading" className="space-y-2">
-          <h2 id="program-heading" className="text-xl font-semibold">
-            Programa de sesión
-          </h2>
-          {programName && programSummary ? (
-            <p className="font-mono text-sm text-slate-300">
-              {programName} · {programSummary.bytesLoaded} bytes ·{" "}
-              {programSummary.recordCount} registros ·{" "}
-              {programSummary.ranges.length > 0
-                ? programSummary.ranges
-                    .map(
-                      (range) =>
-                        `$${hexWord(range.start)}-$${hexWord(range.end)}`,
-                    )
-                    .join(", ")
-                : "sin rangos"}
-            </p>
-          ) : (
-            <p className="text-sm text-slate-500">
-              Ningún S19 ni listado cargado. La imagen se pierde al cerrar la
-              aplicación.
-            </p>
-          )}
-        </section>
-
-        <section aria-labelledby="memory-heading" className="space-y-3">
-          <h2 id="memory-heading" className="text-xl font-semibold">
-            Memoria
-          </h2>
-          <form
-            onSubmit={onInspectOrigin}
-            className="flex flex-wrap items-end gap-4"
-            aria-label="Origen de la ventana"
-          >
-            <fieldset className="grid gap-2 text-sm">
-              <legend className="text-slate-400">Origen</legend>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="origin"
-                  checked={origin === "pc"}
-                  onChange={() => setOrigin("pc")}
-                />
-                Seguir PC
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="origin"
-                  checked={origin === "s19"}
-                  onChange={() => setOrigin("s19")}
-                  disabled={!programSummary?.ranges.length}
-                />
-                Primer rango S19
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="origin"
-                  checked={origin === "hex"}
-                  onChange={() => setOrigin("hex")}
-                />
-                Dirección
-              </label>
-            </fieldset>
-            <label className="grid gap-1 text-sm">
-              <span>Dirección hex</span>
-              <input
-                className="w-28 rounded border border-slate-700 bg-slate-900 px-3 py-2 font-mono"
-                value={hexOrigin}
-                onChange={(event) => setHexOrigin(event.target.value)}
-                spellCheck={false}
-                disabled={origin !== "hex"}
-              />
-            </label>
-            <fieldset className="grid gap-2 text-sm">
-              <legend className="text-slate-400">Formato</legend>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="byte-format"
-                  checked={byteFormat === "hex"}
-                  onChange={() => setByteFormat("hex")}
-                />
-                Hex
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="byte-format"
-                  checked={byteFormat === "bin"}
-                  onChange={() => setByteFormat("bin")}
-                />
-                Binario
-              </label>
-            </fieldset>
-            <button
-              type="submit"
-              className="rounded border border-slate-500 px-4 py-2 font-semibold disabled:opacity-50"
-              disabled={busy}
-            >
-              Inspeccionar
-            </button>
-          </form>
-          <MemoryHex
-            view={memoryView}
-            pc={snapshot?.pc ?? null}
-            lastStep={lastStep}
-            cursor={cursor}
-            format={byteFormat}
-            busy={busy}
-            onCursorChange={setCursor}
-            onWindowChange={pinHexWindow}
-            onWriteByte={onWriteByte}
-          />
-        </section>
-
-        <form
-          onSubmit={onLoad}
-          className="grid max-w-xl gap-3"
-          aria-labelledby="load-heading"
+        {/* Right Column: Reorderable Draggable Cards */}
+        <div
+          style={{ width: `${100 - filePanelWidth}%` }}
+          className="w-full lg:w-auto flex-1 h-1/2 lg:h-full flex flex-col gap-3 overflow-y-auto pl-0 lg:pl-1 pr-1"
         >
-          <h2 id="load-heading" className="text-xl font-semibold">
-            Cargar bytes
-          </h2>
-          <label className="grid gap-1">
-            <span>Dirección inicial</span>
-            <input
-              className="rounded border border-slate-700 bg-slate-900 px-3 py-2 font-mono"
-              value={startInput}
-              onChange={(event) => setStartInput(event.target.value)}
-              spellCheck={false}
-              aria-describedby="load-help"
-            />
-          </label>
-          <label className="grid gap-1">
-            <span>Bytes hexadecimales</span>
-            <input
-              className="rounded border border-slate-700 bg-slate-900 px-3 py-2 font-mono"
-              value={dataInput}
-              onChange={(event) => setDataInput(event.target.value)}
-              spellCheck={false}
-            />
-          </label>
-          <p id="load-help" className="text-sm text-slate-500">
-            Ejemplo: dirección 0000 y datos 86 55 4F para LDAA #$55 y CLRA.
-          </p>
-          <button
-            type="submit"
-            className="w-fit rounded bg-slate-100 px-4 py-2 font-semibold text-slate-950 disabled:opacity-50"
-            disabled={busy}
-          >
-            Cargar
-          </button>
-        </form>
-      </div>
-    </main>
+          {blockOrder.map((id, index) => renderBlock(id, index))}
+        </div>
+      </main>
+
+      {/* Hidden File Inputs */}
+      <input
+        ref={s19InputRef}
+        type="file"
+        accept=".s19,.srec,.mot,text/plain"
+        className="sr-only"
+        tabIndex={-1}
+        disabled={busy}
+        onChange={(e) => void onS19Selected(e)}
+        aria-hidden="true"
+      />
+      <input
+        ref={listingInputRef}
+        type="file"
+        accept=".lst,.txt,text/plain"
+        className="sr-only"
+        tabIndex={-1}
+        disabled={busy}
+        onChange={(e) => void onListingSelected(e)}
+        aria-hidden="true"
+      />
+
+      {/* Manual Bytes Entry Modal */}
+      <ManualLoadModal
+        isOpen={isManualLoadOpen}
+        onClose={() => setIsManualLoadOpen(false)}
+        onLoad={handleManualLoad}
+        busy={busy}
+      />
+    </div>
   );
-}
-
-function formatError(error: IpcError) {
-  return `${error.code}: ${error.message}`;
-}
-
-function flagLine(flags: NonNullable<CpuSnapshot["ccrFlags"]>) {
-  return (["s", "x", "h", "i", "n", "z", "v", "c"] as const)
-    .map((flag) => `${flag.toUpperCase()}${flags[flag] ? "1" : "0"}`)
-    .join(" ");
-}
-
-function registerRows(snapshot: CpuSnapshot | null) {
-  if (!snapshot) {
-    return [
-      { label: "A", value: "—" },
-      { label: "B", value: "—" },
-      { label: "D", value: "—" },
-      { label: "IX", value: "—" },
-      { label: "IY", value: "—" },
-      { label: "SP", value: "—" },
-      { label: "PC", value: "—" },
-      { label: "CCR", value: "—" },
-    ];
-  }
-  return [
-    { label: "A", value: `$${hexByte(snapshot.a)}` },
-    { label: "B", value: `$${hexByte(snapshot.b)}` },
-    { label: "D", value: `$${hexWord(snapshot.d)}` },
-    { label: "IX", value: `$${hexWord(snapshot.x)}` },
-    { label: "IY", value: `$${hexWord(snapshot.y)}` },
-    { label: "SP", value: `$${hexWord(snapshot.sp)}` },
-    { label: "PC", value: `$${hexWord(snapshot.pc)}` },
-    { label: "CCR", value: `$${hexByte(snapshot.ccr)}` },
-  ];
 }
 
 export default App;
