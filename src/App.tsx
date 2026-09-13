@@ -174,7 +174,8 @@ export function App() {
 
   const [dataSliceStart, setDataSliceStart] = useState<number>(0x0000);
   const [dataView, setDataView] = useState<MemoryView | null>(null);
-  const [byteFormat, setByteFormat] = useState<ByteFormat>("hex");
+  const [programByteFormat, setProgramByteFormat] = useState<ByteFormat>("hex");
+  const [dataByteFormat, setDataByteFormat] = useState<ByteFormat>("hex");
 
   // Controls
   const [maxSteps, setMaxSteps] = useState("100");
@@ -517,18 +518,23 @@ export function App() {
             title="Registros Internos"
             badge={snapshot ? `Ciclos: ${snapshot.cycles}` : undefined}
             headerExtra={
-              <button
-                type="button"
-                onClick={() =>
-                  setRegistersFormat((curr) =>
-                    curr === "hex" ? "bin" : curr === "bin" ? "dec" : "hex",
-                  )
-                }
-                className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-mono font-bold text-amber-400 transition-colors cursor-pointer"
-                title="Alternar formato Hexadecimal / Binario / Decimal para los registros"
-              >
-                {registersFormat.toUpperCase()}
-              </button>
+              <div className="inline-flex rounded-md border border-slate-700 bg-slate-900/90 p-0.5 shadow-inner">
+                {(["hex", "dec", "bin"] as const).map((fmt) => (
+                  <button
+                    key={fmt}
+                    type="button"
+                    onClick={() => setRegistersFormat(fmt)}
+                    className={`px-1.5 py-0.5 text-[11px] font-mono font-bold rounded transition-colors cursor-pointer ${
+                      registersFormat === fmt
+                        ? "bg-amber-400 text-slate-950 shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                    }`}
+                    title={`Ver registros en ${fmt === "hex" ? "Hexadecimal" : fmt === "dec" ? "Decimal" : "Binario"}`}
+                  >
+                    {fmt.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             }
             {...commonProps}
           >
@@ -585,7 +591,7 @@ export function App() {
             badge={followPc ? "Siguiendo PC" : "Fijada"}
             {...commonProps}
             headerExtra={
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setFollowPc(!followPc)}
@@ -611,18 +617,23 @@ export function App() {
                 >
                   Inicio Prog
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setByteFormat((curr) =>
-                      curr === "hex" ? "bin" : curr === "bin" ? "dec" : "hex",
-                    )
-                  }
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-mono font-bold text-amber-400 transition-colors cursor-pointer"
-                  title="Alternar formato Hex / Bin / Dec"
-                >
-                  {byteFormat.toUpperCase()}
-                </button>
+                <div className="inline-flex rounded-md border border-slate-700 bg-slate-900/90 p-0.5 shadow-inner">
+                  {(["hex", "dec", "bin"] as const).map((fmt) => (
+                    <button
+                      key={fmt}
+                      type="button"
+                      onClick={() => setProgramByteFormat(fmt)}
+                      className={`px-1.5 py-0.5 text-[11px] font-mono font-bold rounded transition-colors cursor-pointer ${
+                        programByteFormat === fmt
+                          ? "bg-amber-400 text-slate-950 shadow-xs"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                      }`}
+                      title={`Ver Memoria de Programa en ${fmt === "hex" ? "Hexadecimal" : fmt === "dec" ? "Decimal" : "Binario"}`}
+                    >
+                      {fmt.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
             }
           >
@@ -631,7 +642,7 @@ export function App() {
               view={programView}
               pc={snapshot?.pc ?? null}
               writeSet={writeSet}
-              format={byteFormat}
+              format={programByteFormat}
               busy={busy}
               onAddressChange={(addr) => {
                 setFollowPc(false);
@@ -654,7 +665,7 @@ export function App() {
             title="Memoria de Datos"
             {...commonProps}
             headerExtra={
-              <div className="flex flex-wrap items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => void fetchDataSlice(0x0000)}
@@ -685,18 +696,23 @@ export function App() {
                 >
                   I/O $1000
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setByteFormat((curr) =>
-                      curr === "hex" ? "bin" : curr === "bin" ? "dec" : "hex",
-                    )
-                  }
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-mono font-bold text-amber-400 transition-colors cursor-pointer"
-                  title="Alternar formato Hex / Bin / Dec"
-                >
-                  {byteFormat.toUpperCase()}
-                </button>
+                <div className="inline-flex rounded-md border border-slate-700 bg-slate-900/90 p-0.5 shadow-inner">
+                  {(["hex", "dec", "bin"] as const).map((fmt) => (
+                    <button
+                      key={fmt}
+                      type="button"
+                      onClick={() => setDataByteFormat(fmt)}
+                      className={`px-1.5 py-0.5 text-[11px] font-mono font-bold rounded transition-colors cursor-pointer ${
+                        dataByteFormat === fmt
+                          ? "bg-amber-400 text-slate-950 shadow-xs"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                      }`}
+                      title={`Ver Memoria de Datos en ${fmt === "hex" ? "Hexadecimal" : fmt === "dec" ? "Decimal" : "Binario"}`}
+                    >
+                      {fmt.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
             }
           >
@@ -705,7 +721,7 @@ export function App() {
               view={dataView}
               pc={snapshot?.pc ?? null}
               writeSet={writeSet}
-              format={byteFormat}
+              format={dataByteFormat}
               busy={busy}
               onAddressChange={(addr) => {
                 void fetchDataSlice(addr);
@@ -858,8 +874,10 @@ export function App() {
         onThemeChange={setTheme}
         registersFormat={registersFormat}
         onRegistersFormatChange={setRegistersFormat}
-        memoryFormat={byteFormat}
-        onMemoryFormatChange={setByteFormat}
+        programMemoryFormat={programByteFormat}
+        onProgramMemoryFormatChange={setProgramByteFormat}
+        dataMemoryFormat={dataByteFormat}
+        onDataMemoryFormatChange={setDataByteFormat}
         onResetLayout={handleResetLayout}
       />
     </div>

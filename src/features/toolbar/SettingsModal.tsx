@@ -10,8 +10,10 @@ interface SettingsModalProps {
   onThemeChange: (theme: "dark" | "light") => void;
   registersFormat: "hex" | "bin" | "dec";
   onRegistersFormatChange: (format: "hex" | "bin" | "dec") => void;
-  memoryFormat: ByteFormat;
-  onMemoryFormatChange: (format: ByteFormat) => void;
+  programMemoryFormat: ByteFormat;
+  onProgramMemoryFormatChange: (format: ByteFormat) => void;
+  dataMemoryFormat: ByteFormat;
+  onDataMemoryFormatChange: (format: ByteFormat) => void;
   onResetLayout: () => void;
 }
 
@@ -31,8 +33,10 @@ export function SettingsModal({
   onThemeChange,
   registersFormat,
   onRegistersFormatChange,
-  memoryFormat,
-  onMemoryFormatChange,
+  programMemoryFormat,
+  onProgramMemoryFormatChange,
+  dataMemoryFormat,
+  onDataMemoryFormatChange,
   onResetLayout,
 }: SettingsModalProps) {
   // Handle ESC key to close modal
@@ -315,22 +319,22 @@ export function SettingsModal({
                 </div>
               </div>
 
-              {/* Memory Format */}
+              {/* Program Memory Format */}
               <div className="flex items-center justify-between p-3 rounded-xl border border-slate-800/80 bg-slate-950/40">
                 <div>
                   <div className="text-xs font-bold text-slate-200">
-                    Secciones de Memoria
+                    Memoria de Programa
                   </div>
                   <div className="text-[11px] text-slate-400">
-                    Hex, Binario o Decimal (0-255)
+                    Hex ($XX), Bin (%XXXX) o Dec (0-255)
                   </div>
                 </div>
                 <div className="inline-flex rounded-lg border border-slate-800 bg-slate-900 p-0.5 text-xs font-medium">
                   <button
                     type="button"
-                    onClick={() => onMemoryFormatChange("hex")}
+                    onClick={() => onProgramMemoryFormatChange("hex")}
                     className={`rounded-md px-2 py-1 transition-colors cursor-pointer ${
-                      memoryFormat === "hex"
+                      programMemoryFormat === "hex"
                         ? "bg-amber-400 font-bold text-slate-950 shadow-xs"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
@@ -339,25 +343,72 @@ export function SettingsModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => onMemoryFormatChange("bin")}
+                    onClick={() => onProgramMemoryFormatChange("dec")}
                     className={`rounded-md px-2 py-1 transition-colors cursor-pointer ${
-                      memoryFormat === "bin"
+                      programMemoryFormat === "dec"
+                        ? "bg-amber-400 font-bold text-slate-950 shadow-xs"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    DEC
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onProgramMemoryFormatChange("bin")}
+                    className={`rounded-md px-2 py-1 transition-colors cursor-pointer ${
+                      programMemoryFormat === "bin"
                         ? "bg-amber-400 font-bold text-slate-950 shadow-xs"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
                     BIN
                   </button>
+                </div>
+              </div>
+
+              {/* Data Memory Format */}
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-800/80 bg-slate-950/40">
+                <div>
+                  <div className="text-xs font-bold text-slate-200">
+                    Memoria de Datos
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Hex ($XX), Bin (%XXXX) o Dec (0-255)
+                  </div>
+                </div>
+                <div className="inline-flex rounded-lg border border-slate-800 bg-slate-900 p-0.5 text-xs font-medium">
                   <button
                     type="button"
-                    onClick={() => onMemoryFormatChange("dec")}
+                    onClick={() => onDataMemoryFormatChange("hex")}
                     className={`rounded-md px-2 py-1 transition-colors cursor-pointer ${
-                      memoryFormat === "dec"
+                      dataMemoryFormat === "hex"
+                        ? "bg-amber-400 font-bold text-slate-950 shadow-xs"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    HEX
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDataMemoryFormatChange("dec")}
+                    className={`rounded-md px-2 py-1 transition-colors cursor-pointer ${
+                      dataMemoryFormat === "dec"
                         ? "bg-amber-400 font-bold text-slate-950 shadow-xs"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
                     DEC
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDataMemoryFormatChange("bin")}
+                    className={`rounded-md px-2 py-1 transition-colors cursor-pointer ${
+                      dataMemoryFormat === "bin"
+                        ? "bg-amber-400 font-bold text-slate-950 shadow-xs"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    BIN
                   </button>
                 </div>
               </div>

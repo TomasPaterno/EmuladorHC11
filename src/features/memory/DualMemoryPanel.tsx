@@ -32,7 +32,8 @@ export function DualMemoryPanel({
   onDataAddressChange,
   onWriteByte,
 }: DualMemoryPanelProps) {
-  const [format, setFormat] = useState<ByteFormat>("hex");
+  const [programFormat, setProgramFormat] = useState<ByteFormat>("hex");
+  const [dataFormat, setDataFormat] = useState<ByteFormat>("hex");
 
   const writeSet = useMemo(() => {
     const set = new Set<number>();
@@ -46,54 +47,6 @@ export function DualMemoryPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Global Memory Options Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-            Vista Dual de Memoria
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Formato:</span>
-          <div className="inline-flex rounded-md border border-slate-800 bg-slate-950 p-0.5 text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => setFormat("hex")}
-              className={`rounded px-2 py-0.5 transition-colors cursor-pointer ${
-                format === "hex"
-                  ? "bg-amber-400 font-bold text-slate-950 shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Hex
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormat("bin")}
-              className={`rounded px-2 py-0.5 transition-colors cursor-pointer ${
-                format === "bin"
-                  ? "bg-amber-400 font-bold text-slate-950 shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Bin
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormat("dec")}
-              className={`rounded px-2 py-0.5 transition-colors cursor-pointer ${
-                format === "dec"
-                  ? "bg-amber-400 font-bold text-slate-950 shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Dec
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* The Two Slices */}
       <div className="grid grid-cols-1 gap-3">
         {/* Slice 1: Memoria de Programa */}
@@ -103,12 +56,12 @@ export function DualMemoryPanel({
           view={programView}
           pc={pc}
           writeSet={writeSet}
-          format={format}
+          format={programFormat}
           busy={busy}
           onAddressChange={onProgramAddressChange}
           onWriteByte={onWriteByte}
           headerControls={
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => onFollowPcChange(!followPc)}
@@ -132,6 +85,22 @@ export function DualMemoryPanel({
               >
                 Inicio Prog
               </button>
+              <div className="inline-flex rounded-md border border-slate-700 bg-slate-900/90 p-0.5 shadow-inner">
+                {(["hex", "dec", "bin"] as const).map((fmt) => (
+                  <button
+                    key={fmt}
+                    type="button"
+                    onClick={() => setProgramFormat(fmt)}
+                    className={`px-1.5 py-0.5 text-[11px] font-mono font-bold rounded transition-colors cursor-pointer ${
+                      programFormat === fmt
+                        ? "bg-amber-400 text-slate-950 shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                    }`}
+                  >
+                    {fmt.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
           }
         />
@@ -142,12 +111,12 @@ export function DualMemoryPanel({
           view={dataView}
           pc={pc}
           writeSet={writeSet}
-          format={format}
+          format={dataFormat}
           busy={busy}
           onAddressChange={onDataAddressChange}
           onWriteByte={onWriteByte}
           headerControls={
-            <div className="flex flex-wrap items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => onDataAddressChange(0x0000)}
@@ -175,6 +144,22 @@ export function DualMemoryPanel({
               >
                 I/O $1000
               </button>
+              <div className="inline-flex rounded-md border border-slate-700 bg-slate-900/90 p-0.5 shadow-inner">
+                {(["hex", "dec", "bin"] as const).map((fmt) => (
+                  <button
+                    key={fmt}
+                    type="button"
+                    onClick={() => setDataFormat(fmt)}
+                    className={`px-1.5 py-0.5 text-[11px] font-mono font-bold rounded transition-colors cursor-pointer ${
+                      dataFormat === fmt
+                        ? "bg-amber-400 text-slate-950 shadow-xs"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                    }`}
+                  >
+                    {fmt.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
           }
         />
