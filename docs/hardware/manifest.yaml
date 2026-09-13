@@ -1,0 +1,74 @@
+schema_version: 1
+documents:
+  - id: e-family-r3.1
+    source_id: E31
+    file: original/68hc11_tech_data_rev3p1.pdf
+    source_path: original/68hc11_tech_data_rev3p1.pdf
+    sha256: 8cc85c36795f69b10a6effd4cbd877a13f594a7dd0e1294e7bad8be6e0573faa
+    bytes: 3392963
+    pdf_pages: 336
+    page_count: 336
+    manufacturer: Motorola
+    document_number: M68HC11E/D
+    title: M68HC11E Family Technical Data
+    revision: "3.1"
+    date: 2001-05
+    variants:
+      [
+        MC68HC11E0,
+        MC68HC11E1,
+        MC68HC11E9,
+        MC68HC711E9,
+        MC68HC11E20,
+        MC68HC711E20,
+        MC68HC811E2,
+      ]
+    acquisition_url: https://mil.ufl.edu/4744/docs/68hc11_tech_data_rev3p1.pdf
+    text_layer: true
+    normative_rank: historical
+
+  - id: family-reference-r3
+    source_id: RM3
+    file: original/0900766b800344e4.pdf
+    source_path: original/0900766b800344e4.pdf
+    sha256: 8b43047f1ddded0ff28ef2530799a66752e717ef52cf961602b8f2829ab94a41
+    bytes: 31028881
+    pdf_pages: 498
+    page_count: 498
+    manufacturer: Motorola
+    document_number: M68HC11RM/AD
+    title: M68HC11 Reference Manual
+    revision: "3"
+    date: 1991
+    variants: [MC68HC11A8, M68HC11-family]
+    acquisition_url: https://mirrors.meulie.net/bitsavers.org/components/motorola/68HC11/1991_M68HC11RM_Reference_Manual_Rev3.pdf
+    text_layer: false
+    normative_rank: family-reference
+
+  - id: e-family-r5
+    source_id: E5
+    file: original/M68HC11E_Family.pdf
+    source_path: original/M68HC11E_Family.pdf
+    sha256: 6ed3e84d7a3ad0db30dd11a6b640849f73a0e678b56a28b2fc6eab1d20c7095f
+    bytes: 3631494
+    pdf_pages: 268
+    page_count: 268
+    manufacturer: Motorola/Freescale
+    document_number: M68HC11E/D
+    title: M68HC11E Family Data Sheet
+    revision: "5"
+    date: 2003-06
+    variants:
+      [
+        MC68HC11E0,
+        MC68HC11E1,
+        MC68HC11E9,
+        MC68HC711E9,
+        MC68HC11E20,
+        MC68HC711E20,
+        MC68HC811E2,
+      ]
+    acquisition_url: https://media.digikey.com/pdf/Data%20Sheets/Freescale%20Semi/M68HC11E%20Family.pdf
+    canonical_url: https://www.nxp.com/docs/en/data-sheet/M68HC11E.pdf
+    text_layer: true
+    normative_rank: variant-data-sheet

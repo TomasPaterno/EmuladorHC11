@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-load-listing"
+description = "Enables the load_listing command without any pre-configured scope."
+commands.allow = ["load_listing"]
+
+[[permission]]
+identifier = "deny-load-listing"
+description = "Denies the load_listing command without any pre-configured scope."
+commands.deny = ["load_listing"]

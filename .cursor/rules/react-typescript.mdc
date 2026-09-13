@@ -1,0 +1,15 @@
+---
+description: Convenciones de React y TypeScript para la interfaz del emulador
+globs: "src/**/*.{ts,tsx,css}"
+alwaysApply: false
+---
+
+# React y TypeScript
+
+- Mantener TypeScript estricto; evitar `any`, aserciones inseguras y estados imposibles.
+- Separar componentes visuales, hooks de coordinación y cliente IPC tipado.
+- Derivar estado cuando sea posible; no duplicar registros o memoria en múltiples stores.
+- Limpiar listeners y tareas asíncronas; evitar carreras entre ejecución, pausa y reset.
+- Renderizar listas con claves estables y memorizar solo cuando exista una razón medible.
+- Garantizar teclado, foco, etiquetas accesibles, contraste y estados de carga/error.
+- Validar respuestas IPC antes de incorporarlas al estado de UI.

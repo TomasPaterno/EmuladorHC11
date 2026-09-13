@@ -1,0 +1,269 @@
+schema_version: 1
+address_space:
+  start: 0x0000
+  end: 0xFFFF
+  source: { source_id: E5, section: "4.1", printed_page: 73, pdf_page: 73 }
+  review_status: human_verified
+common_e_series_reset_regions:
+  - {
+      id: registers,
+      start: 0x1000,
+      end: 0x103F,
+      relocatable_by: INIT.REG,
+      source:
+        { source_id: E5, section: "2.3.3.2", printed_page: 50, pdf_page: 50 },
+      review_status: human_verified,
+    }
+  - {
+      id: normal_vectors,
+      start: 0xFFC0,
+      end: 0xFFFF,
+      source:
+        {
+          source_id: E5,
+          section: "2.3, Figures 2-2..2-6",
+          printed_page: "36-38",
+          pdf_page: "36-38",
+        },
+      review_status: human_verified,
+    }
+e_series_profiles:
+  mc68hc11e0:
+    regions:
+      - {
+          id: ram,
+          start: 0x0000,
+          end: 0x01FF,
+          relocatable_by: INIT.RAM,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-2",
+              printed_page: 36,
+              pdf_page: 36,
+            },
+          review_status: human_verified,
+        }
+  mc68hc11e1:
+    regions:
+      - {
+          id: ram,
+          start: 0x0000,
+          end: 0x01FF,
+          relocatable_by: INIT.RAM,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-3",
+              printed_page: 36,
+              pdf_page: 36,
+            },
+          review_status: human_verified,
+        }
+      - {
+          id: eeprom,
+          start: 0xB600,
+          end: 0xB7FF,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-3",
+              printed_page: 36,
+              pdf_page: 36,
+            },
+          review_status: human_verified,
+        }
+  mc68hc11e9:
+    regions:
+      - {
+          id: ram,
+          start: 0x0000,
+          end: 0x01FF,
+          relocatable_by: INIT.RAM,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-4",
+              printed_page: 37,
+              pdf_page: 37,
+            },
+          review_status: human_verified,
+        }
+      - {
+          id: eeprom,
+          start: 0xB600,
+          end: 0xB7FF,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-4",
+              printed_page: 37,
+              pdf_page: 37,
+            },
+          review_status: human_verified,
+        }
+      - {
+          id: rom,
+          start: 0xD000,
+          end: 0xFFFF,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-4",
+              printed_page: 37,
+              pdf_page: 37,
+            },
+          review_status: human_verified,
+        }
+  mc68hc711e9:
+    inherits_map: mc68hc11e9
+    program_region_kind: eprom
+    source:
+      {
+        source_id: E5,
+        section: "2.3, Figure 2-4",
+        printed_page: 37,
+        pdf_page: 37,
+      }
+    review_status: human_verified
+  mc68hc11e20:
+    regions:
+      - {
+          id: ram,
+          start: 0x0000,
+          end: 0x02FF,
+          relocatable_by: INIT.RAM,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-5",
+              printed_page: 37,
+              pdf_page: 37,
+            },
+          review_status: human_verified,
+        }
+      - {
+          id: eeprom,
+          start: 0xB600,
+          end: 0xB7FF,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-5",
+              printed_page: 37,
+              pdf_page: 37,
+            },
+          review_status: human_verified,
+        }
+      - {
+          id: rom_low,
+          start: 0x9000,
+          end: 0xAFFF,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-5",
+              printed_page: 37,
+              pdf_page: 37,
+            },
+          review_status: human_verified,
+        }
+      - {
+          id: rom_high,
+          start: 0xD000,
+          end: 0xFFFF,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-5",
+              printed_page: 37,
+              pdf_page: 37,
+            },
+          review_status: human_verified,
+        }
+  mc68hc711e20:
+    inherits_map: mc68hc11e20
+    program_region_kind: eprom
+    source:
+      {
+        source_id: E5,
+        section: "2.3, Figure 2-5",
+        printed_page: 37,
+        pdf_page: 37,
+      }
+    review_status: human_verified
+  mc68hc811e2:
+    regions:
+      - {
+          id: ram,
+          start: 0x0000,
+          end: 0x00FF,
+          relocatable_by: INIT.RAM,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-6",
+              printed_page: 38,
+              pdf_page: 38,
+            },
+          review_status: human_verified,
+        }
+      - {
+          id: eeprom,
+          start: 0xF800,
+          end: 0xFFFF,
+          relocatable_by: CONFIG.EE,
+          source:
+            {
+              source_id: E5,
+              section: "2.3, Figure 2-6",
+              printed_page: 38,
+              pdf_page: 38,
+            },
+          review_status: human_verified,
+        }
+a8_reset_regions:
+  - {
+      id: ram,
+      start: 0x0000,
+      end: 0x00FF,
+      source:
+        {
+          source_id: RM3,
+          section: "4; 7.2",
+          printed_page: "4-1; 7-7",
+          pdf_page: null,
+        },
+      review_status: pending_pdf_page,
+    }
+  - {
+      id: registers,
+      start: 0x1000,
+      end: 0x103F,
+      source:
+        {
+          source_id: RM3,
+          section: "3.3.1; 7.2",
+          printed_page: "3-6; 7-7",
+          pdf_page: null,
+        },
+      review_status: pending_pdf_page,
+    }
+  - {
+      id: rom,
+      start: null,
+      end: null,
+      size_bytes: 8192,
+      source:
+        { source_id: RM3, section: "1.1", printed_page: "1-1", pdf_page: null },
+      review_status: pending_pdf_page_and_addresses,
+    }
+  - {
+      id: eeprom,
+      start: null,
+      end: null,
+      size_bytes: 512,
+      source:
+        { source_id: RM3, section: "1.1", printed_page: "1-1", pdf_page: null },
+      review_status: pending_pdf_page_and_addresses,
+    }

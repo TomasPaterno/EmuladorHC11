@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-load-s19"
+description = "Enables the load_s19 command without any pre-configured scope."
+commands.allow = ["load_s19"]
+
+[[permission]]
+identifier = "deny-load-s19"
+description = "Denies the load_s19 command without any pre-configured scope."
+commands.deny = ["load_s19"]

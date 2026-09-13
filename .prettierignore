@@ -1,0 +1,7 @@
+dist
+node_modules
+src-tauri/target
+src-tauri/gen
+docs/hardware/original
+docs/hardware/derived
+package-lock.json

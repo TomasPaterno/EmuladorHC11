@@ -1,0 +1,99 @@
+schema_version: 1
+policy: ../../decisions/0004-source-policy.md
+profiles:
+  - id: mc68hc11e0
+    family: E-series
+    ram_bytes: 512
+    rom_bytes: 0
+    eprom_bytes: 0
+    eeprom_bytes: 0
+    source:
+      source_id: E5
+      section: "1.3, Figure 1-1"
+      printed_page: 17
+      pdf_page: 17
+    review_status: human_verified
+  - id: mc68hc11e1
+    family: E-series
+    ram_bytes: 512
+    rom_bytes: 0
+    eprom_bytes: 0
+    eeprom_bytes: 512
+    source:
+      source_id: E5
+      section: "1.3, Figure 1-1"
+      printed_page: 17
+      pdf_page: 17
+    review_status: human_verified
+  - id: mc68hc11e9
+    family: E-series
+    ram_bytes: 512
+    rom_bytes: 12288
+    eprom_bytes: 0
+    eeprom_bytes: 512
+    source:
+      source_id: E5
+      section: "1.3, Figure 1-1"
+      printed_page: 17
+      pdf_page: 17
+    review_status: human_verified
+  - id: mc68hc711e9
+    family: E-series
+    ram_bytes: 512
+    rom_bytes: 0
+    eprom_bytes: 12288
+    eeprom_bytes: 512
+    source:
+      source_id: E5
+      section: "1.3, Figure 1-1"
+      printed_page: 17
+      pdf_page: 17
+    review_status: human_verified
+  - id: mc68hc11e20
+    family: E-series
+    ram_bytes: 768
+    rom_bytes: 20480
+    eprom_bytes: 0
+    eeprom_bytes: 512
+    source:
+      source_id: E5
+      section: "1.3, Figure 1-1"
+      printed_page: 17
+      pdf_page: 17
+    review_status: human_verified
+  - id: mc68hc711e20
+    family: E-series
+    ram_bytes: 768
+    rom_bytes: 0
+    eprom_bytes: 20480
+    eeprom_bytes: 512
+    source:
+      source_id: E5
+      section: "1.3, Figure 1-1"
+      printed_page: 17
+      pdf_page: 17
+    review_status: human_verified
+  - id: mc68hc811e2
+    family: E-series
+    ram_bytes: 256
+    rom_bytes: 0
+    eprom_bytes: 0
+    eeprom_bytes: 2048
+    source:
+      source_id: E5
+      section: "1.3, Figure 1-1"
+      printed_page: 17
+      pdf_page: 17
+    review_status: human_verified
+  - id: mc68hc11a8
+    family: A8
+    ram_bytes: 256
+    rom_bytes: 8192
+    eprom_bytes: 0
+    eeprom_bytes: 512
+    source:
+      source_id: RM3
+      section: "1.1"
+      printed_page: "1-1"
+      pdf_page: null
+    review_status: pending_pdf_page

@@ -1,0 +1,15 @@
+---
+description: Trazabilidad obligatoria de fuentes y revisión visual de documentación HC11
+globs: "{**/*.md,src-tauri/src/**/*.rs}"
+alwaysApply: false
+---
+
+# Trazabilidad documental
+
+- Toda afirmación sobre hardware, opcode, flag, ciclo, registro o mapa de memoria exige `source_id`.
+- Cada `source_id` debe resolver a documento, edición/revisión, página o sección y ubicación del archivo.
+- Para PDF, inspeccionar visualmente la página citada y registrar `visual_review: true`; texto extraído u OCR no bastan.
+- Citar la página impresa y la página PDF cuando difieran.
+- Distinguir hechos de fuente, inferencias y decisiones de implementación.
+- Si dos fuentes discrepan, no elegir silenciosamente: registrar ambas y justificar la resolución.
+- Mantener trazabilidad desde el requisito hasta código y pruebas; marcar como no verificado lo que carezca de evidencia.

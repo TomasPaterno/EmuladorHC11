@@ -1,0 +1,15 @@
+---
+description: Corrección del núcleo Motorola 68HC11 implementado en Rust
+globs: "src-tauri/src/**/*.rs"
+alwaysApply: false
+---
+
+# HC11 en Rust
+
+- No implementar comportamiento sin evidencia con `source_id`.
+- Representar anchos, wrapping, signo, endianness y modos de direccionamiento explícitamente.
+- Centralizar fetch/decode, acceso a memoria, actualización del PC y conteo de ciclos.
+- Actualizar CCR exactamente según la variante documentada; no generalizar entre instrucciones similares.
+- Evitar `unsafe`; si fuera imprescindible, documentar invariantes y aislarlo.
+- Preferir tipos y errores explícitos a sentinelas, `unwrap` o `expect` en rutas de ejecución.
+- Probar opcode, operandos, registros, memoria, PC, CCR, ciclos y casos límite.

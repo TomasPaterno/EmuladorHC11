@@ -1,0 +1,92 @@
+- main [ref=e3]:
+    - generic [ref=e4]:
+        - generic [ref=e5]:
+            - paragraph [ref=e6]: MC68HC11E9
+            - heading "Inspector del núcleo" [level=1] [ref=e7]
+            - paragraph [ref=e8]: Reset, Step o Run. Cargue un S19 o un listado compilado (línea, dirección, bytes). El volcado y el último paso salen del núcleo.
+        - group "Control de ejecución" [ref=e9]:
+            - button "Reset" [ref=e10]
+            - button "Step" [ref=e11]
+            - form [ref=e12]:
+                - heading "Ejecutar" [level=2] [ref=e13]
+                - generic [ref=e14]:
+                    - generic [ref=e15]: Máx. pasos
+                    - textbox "Máx. pasos" [ref=e16]: "100"
+                - button "Run" [ref=e17]
+            - button "Cargar S19" [ref=e18]
+            - button [aria-hidden] [ref=e19]
+            - button "Cargar listado" [ref=e20]
+            - button [aria-hidden] [ref=e21]
+        - paragraph [ref=e22]: Run se detiene al agotar el cupo o ante un opcode no implementado.
+        - alert [ref=e23]: "invoke_failed: la invocación IPC falló"
+        - region [ref=e24]:
+            - heading "Registros" [level=2] [ref=e25]
+            - table [ref=e26]:
+                - caption [ref=e27]: Estado actual de la CPU
+                - rowgroup [ref=e28]:
+                    - row [ref=e29]:
+                        - rowheader "A" [ref=e30]
+                        - cell "—" [ref=e31]
+                    - row [ref=e32]:
+                        - rowheader "B" [ref=e33]
+                        - cell "—" [ref=e34]
+                    - row [ref=e35]:
+                        - rowheader "D" [ref=e36]
+                        - cell "—" [ref=e37]
+                    - row [ref=e38]:
+                        - rowheader "IX" [ref=e39]
+                        - cell "—" [ref=e40]
+                    - row [ref=e41]:
+                        - rowheader "IY" [ref=e42]
+                        - cell "—" [ref=e43]
+                    - row [ref=e44]:
+                        - rowheader "SP" [ref=e45]
+                        - cell "—" [ref=e46]
+                    - row [ref=e47]:
+                        - rowheader "PC" [ref=e48]
+                        - cell "—" [ref=e49]
+                    - row [ref=e50]:
+                        - rowheader "CCR" [ref=e51]
+                        - cell "—" [ref=e52]
+            - paragraph [ref=e53]: CCR — · INIT $-- · ciclos —
+        - region [ref=e54]:
+            - heading "Último paso" [level=2] [ref=e55]
+            - paragraph [ref=e56]: Vacío tras Reset. Ejecute Step o Run para ver el último cambio.
+        - region [ref=e57]:
+            - heading "Programa de sesión" [level=2] [ref=e58]
+            - paragraph [ref=e59]: Ningún S19 ni listado cargado. La imagen se pierde al cerrar la aplicación.
+        - region [ref=e60]:
+            - heading "Memoria" [level=2] [ref=e61]
+            - form "Origen de la ventana" [ref=e62]:
+                - group "Origen" [ref=e63]:
+                    - generic [ref=e65]:
+                        - radio "Seguir PC" [checked] [ref=e66]
+                        - text: Seguir PC
+                    - generic [ref=e67]:
+                        - radio "Primer rango S19" [disabled] [ref=e68]
+                        - text: Primer rango S19
+                    - generic [ref=e69]:
+                        - radio "Dirección" [ref=e70]
+                        - text: Dirección
+                - generic [ref=e71]:
+                    - generic [ref=e72]: Dirección hex
+                    - textbox "Dirección hex" [disabled] [ref=e73]: "0000"
+                - group "Formato" [ref=e74]:
+                    - generic [ref=e76]:
+                        - radio "Hex" [checked] [ref=e77]
+                        - text: Hex
+                    - generic [ref=e78]:
+                        - radio "Binario" [ref=e79]
+                        - text: Binario
+                - button "Inspeccionar" [ref=e80]
+            - paragraph [ref=e81]: Sin ventana de memoria. Pulse Reset o cargue un programa.
+        - form [ref=e82]:
+            - heading "Cargar bytes" [level=2] [ref=e83]
+            - generic [ref=e84]:
+                - generic [ref=e85]: Dirección inicial
+                - textbox "Dirección inicial" [ref=e86]: "0000"
+            - generic [ref=e87]:
+                - generic [ref=e88]: Bytes hexadecimales
+                - textbox "Bytes hexadecimales" [ref=e89]: "01"
+            - paragraph [ref=e90]: "Ejemplo: dirección 0000 y datos 86 55 4F para LDAA #$55 y CLRA."
+            - button "Cargar" [ref=e91]

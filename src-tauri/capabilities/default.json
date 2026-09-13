@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "allow-reset",
+    "allow-step",
+    "allow-run",
+    "allow-inspect-memory",
+    "allow-write-memory",
+    "allow-load-bytes",
+    "allow-load-s19",
+    "allow-load-listing"
+  ]
+}

@@ -1,0 +1,13 @@
+---
+description: Límites arquitectónicos y dependencias permitidas del emulador HC11
+alwaysApply: true
+---
+
+# Arquitectura
+
+- Separar núcleo HC11, adaptadores Tauri y presentación React.
+- El núcleo debe ser determinista y no depender de UI, reloj de pared, filesystem, red ni APIs Tauri.
+- Modelar efectos mediante interfaces explícitas; evitar estado global mutable.
+- Mantener decodificación, ejecución, memoria y periféricos en módulos con responsabilidades acotadas.
+- React consume contratos IPC tipados; no replica semántica de CPU.
+- Toda dependencia debe apuntar hacia el dominio, nunca desde el dominio hacia infraestructura.

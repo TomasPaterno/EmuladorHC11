@@ -1,0 +1,15 @@
+---
+description: Seguridad y mínimo privilegio para Tauri, IPC y capabilities
+globs: "{src-tauri/**/*,src/**/*.{ts,tsx}}"
+alwaysApply: false
+---
+
+# Seguridad Tauri
+
+- Exponer únicamente commands necesarios y mantener capabilities con mínimo privilegio.
+- Considerar toda entrada IPC no confiable: validar tipo, rango, tamaño, rutas y estado en Rust.
+- Usar DTOs serializables dedicados; no exponer internals del emulador ni errores sensibles.
+- No aceptar rutas arbitrarias, comandos de shell, URLs o nombres de evento controlados por el cliente.
+- Limitar payloads y evitar bloqueos largos en el hilo principal; cancelar o aislar trabajo costoso.
+- No registrar ROMs, dumps, rutas privadas, tokens ni datos sensibles.
+- Revisar conjuntamente command, invocación TypeScript, permisos y manejo de errores.

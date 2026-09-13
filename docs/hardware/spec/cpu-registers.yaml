@@ -1,0 +1,60 @@
+schema_version: 1
+applies_to: [E-series, A8]
+registers:
+  - id: A
+    width_bits: 8
+    role: accumulator
+    source: { source_id: E5, section: "4.2.1", printed_page: 74, pdf_page: 74 }
+    review_status: human_verified
+  - id: B
+    width_bits: 8
+    role: accumulator
+    source: { source_id: E5, section: "4.2.1", printed_page: 74, pdf_page: 74 }
+    review_status: human_verified
+  - id: D
+    width_bits: 16
+    role: composite_accumulator
+    composition: [A, B]
+    high_byte: A
+    low_byte: B
+    source: { source_id: E5, section: "4.2.1", printed_page: 74, pdf_page: 74 }
+    review_status: human_verified
+  - id: X
+    width_bits: 16
+    role: index
+    source: { source_id: E5, section: "4.2.2", printed_page: 75, pdf_page: 75 }
+    review_status: human_verified
+  - id: Y
+    width_bits: 16
+    role: index
+    source: { source_id: E5, section: "4.2.3", printed_page: 75, pdf_page: 75 }
+    review_status: human_verified
+  - id: SP
+    width_bits: 16
+    role: stack_pointer
+    points_to: next_free_location
+    growth: descending_addresses
+    source: { source_id: E5, section: "4.2.4", printed_page: 75, pdf_page: 75 }
+    review_status: human_verified
+  - id: PC
+    width_bits: 16
+    role: program_counter
+    source: { source_id: E5, section: "4.2.5", printed_page: 76, pdf_page: 76 }
+    review_status: human_verified
+  - id: CCR
+    width_bits: 8
+    role: condition_code
+    bits_msb_to_lsb: [S, X, H, I, N, Z, V, C]
+    reset_set_bits: [S, X, I]
+    source:
+      {
+        source_id: E5,
+        section: "4.2.6",
+        printed_page: "77-78",
+        pdf_page: "77-78",
+      }
+    review_status: human_verified
+word_storage:
+  most_significant_byte_at_lower_address: true
+  source: { source_id: E5, section: "4.3", printed_page: 79, pdf_page: 79 }
+  review_status: human_verified

@@ -1,0 +1,166 @@
+schema_version: 1
+vector_byte_order: most_significant_byte_at_lower_address
+e_series:
+  source: &e5_vectors
+    source_id: E5
+    section: "5.5, Table 5-4"
+    printed_page: 99
+    pdf_page: 99
+  review_status: human_verified
+  entries:
+    - {
+        id: sci,
+        start: 0xFFD6,
+        end: 0xFFD7,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: spi,
+        start: 0xFFD8,
+        end: 0xFFD9,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: pulse_accumulator_input_edge,
+        start: 0xFFDA,
+        end: 0xFFDB,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: pulse_accumulator_overflow,
+        start: 0xFFDC,
+        end: 0xFFDD,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_overflow,
+        start: 0xFFDE,
+        end: 0xFFDF,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_ic4_oc5,
+        start: 0xFFE0,
+        end: 0xFFE1,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_oc4,
+        start: 0xFFE2,
+        end: 0xFFE3,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_oc3,
+        start: 0xFFE4,
+        end: 0xFFE5,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_oc2,
+        start: 0xFFE6,
+        end: 0xFFE7,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_oc1,
+        start: 0xFFE8,
+        end: 0xFFE9,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_ic3,
+        start: 0xFFEA,
+        end: 0xFFEB,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_ic2,
+        start: 0xFFEC,
+        end: 0xFFED,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: timer_ic1,
+        start: 0xFFEE,
+        end: 0xFFEF,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: real_time_interrupt,
+        start: 0xFFF0,
+        end: 0xFFF1,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: irq,
+        start: 0xFFF2,
+        end: 0xFFF3,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: xirq,
+        start: 0xFFF4,
+        end: 0xFFF5,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: software_interrupt,
+        start: 0xFFF6,
+        end: 0xFFF7,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: illegal_opcode,
+        start: 0xFFF8,
+        end: 0xFFF9,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: cop_failure,
+        start: 0xFFFA,
+        end: 0xFFFB,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: clock_monitor_failure,
+        start: 0xFFFC,
+        end: 0xFFFD,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+    - {
+        id: reset,
+        start: 0xFFFE,
+        end: 0xFFFF,
+        source: *e5_vectors,
+        review_status: human_verified,
+      }
+a8:
+  source:
+    source_id: RM3
+    section: "5.4, Selecting Interrupt Vectors"
+    printed_page: "5-12..5-19"
+    pdf_page: null
+  review_status: pending_pdf_page_and_table_transcription
+  entries: []
+  note: "Intentionally empty until the scanned RM3 vector table is visually checked; E-series entries must not be copied."
