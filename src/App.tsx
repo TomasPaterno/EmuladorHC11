@@ -161,6 +161,15 @@ export function App() {
   }
 
   async function handleReset() {
+    if (programName && programContent) {
+      if (S19_NAME.test(programName)) {
+        await loadS19Text(programName, programContent);
+      } else {
+        await loadListingText(programName, programContent);
+      }
+      return;
+    }
+
     setBusy(true);
     try {
       const next = await reset();
