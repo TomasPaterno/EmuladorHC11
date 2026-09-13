@@ -1,10 +1,13 @@
-import { KeyboardEvent, useMemo, useRef, useState, WheelEvent } from "react";
-import { MemoryView } from "../../ipc/emulator";
 import {
-  ByteFormat,
-  formatByte,
-  parseByteInput,
-} from "../inspector/memoryFormat";
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { MemoryView } from "../../ipc/emulator";
+import { ByteFormat, parseByteInput } from "../inspector/memoryFormat";
 
 const COLUMNS = 16;
 
@@ -14,6 +17,14 @@ function hexByte(value: number) {
 
 function hexWord(value: number) {
   return value.toString(16).toUpperCase().padStart(4, "0");
+}
+
+function formatDisplayByte(value: number, format: ByteFormat): string {
+  if (format === "bin") {
+    const raw = value.toString(2).padStart(8, "0");
+    return `${raw.slice(0, 4)} ${raw.slice(4)}`;
+  }
+  return hexByte(value);
 }
 
 interface MemorySliceViewProps {
@@ -50,13 +61,82 @@ export function MemorySliceView({
     draft: string;
   } | null>(null);
 
-  const [hexInput, setHexInput] = useState("");
-  const [isEditingAddress, setIsEditingAddress] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [jumpInput, setJumpInput] = useState("");
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const accumulatedDeltaRef = useRef(0);
+  const targetAddressRef = useRef(view?.start ?? 0x2000);
+  const debounceTimerRef = useRef<number | null>(null);
+  const onAddressChangeRef = useRef(onAddressChange);
+
+  useEffect(() => {
+    onAddressChangeRef.current = onAddressChange;
+  }, [onAddressChange]);
+
+  // Synchronize target address when view updates externally
+  useEffect(() => {
+    if (view) {
+      targetAddressRef.current = view.start;
+    }
+  }, [view]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const columns = useMemo(
     () => Array.from({ length: COLUMNS }, (_, i) => i),
     [],
+  );
+
+  // Wheel listener: intercepts vertical scrolling on the memory card to step rows
+  // without triggering Chromium's auto-horizontal scroll or freezing the view.
+  const onWheelNative = useCallback((e: globalThis.WheelEvent) => {
+    // If vertical scroll gesture: intercept and advance rows
+    if (Math.abs(e.deltaY) >= Math.abs(e.deltaX) && Math.abs(e.deltaY) > 1) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      accumulatedDeltaRef.current += e.deltaY;
+      // 35 pixels of wheel delta per memory row (16 bytes)
+      const ROW_STEP_DELTA = 35;
+      const rows = Math.trunc(accumulatedDeltaRef.current / ROW_STEP_DELTA);
+
+      if (rows !== 0) {
+        accumulatedDeltaRef.current -= rows * ROW_STEP_DELTA;
+        const newStart =
+          (targetAddressRef.current + rows * COLUMNS + 0x10000) & 0xffff;
+        targetAddressRef.current = newStart;
+
+        if (debounceTimerRef.current !== null) {
+          window.clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = window.setTimeout(() => {
+          debounceTimerRef.current = null;
+          onAddressChangeRef.current(targetAddressRef.current);
+        }, 20);
+      }
+    }
+    // If horizontal scroll gesture (deltaX > deltaY), let browser scroll table horizontally
+  }, []);
+
+  // Callback ref ensures listener is attached as soon as the DOM node renders
+  const setContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (containerRef.current) {
+        containerRef.current.removeEventListener("wheel", onWheelNative);
+      }
+      containerRef.current = node;
+      if (node) {
+        node.addEventListener("wheel", onWheelNative, { passive: false });
+      }
+    },
+    [onWheelNative],
   );
 
   if (!view) {
@@ -69,14 +149,6 @@ export function MemorySliceView({
 
   const rowsCount = Math.ceil(view.bytes.length / COLUMNS);
 
-  function handleWheel(event: WheelEvent<HTMLDivElement>) {
-    if (!view) return;
-    event.preventDefault();
-    const deltaRows = event.deltaY > 0 ? 1 : -1;
-    const nextStart = (view.start + deltaRows * COLUMNS + 0x10000) & 0xffff;
-    onAddressChange(nextStart);
-  }
-
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!view || edit !== null) return;
     if (event.key === "PageDown") {
@@ -85,6 +157,12 @@ export function MemorySliceView({
     } else if (event.key === "PageUp") {
       event.preventDefault();
       onAddressChange((view.start - view.bytes.length + 0x10000) & 0xffff);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      onAddressChange((view.start + COLUMNS) & 0xffff);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      onAddressChange((view.start - COLUMNS + 0x10000) & 0xffff);
     }
   }
 
@@ -92,13 +170,13 @@ export function MemorySliceView({
     if (busy || !view) return;
     setEdit({
       index,
-      draft: formatByte(view.bytes[index], format),
+      draft: hexByte(view.bytes[index]),
     });
   }
 
   function commitEdit(index: number) {
     if (!edit || !view) return;
-    const parsed = parseByteInput(edit.draft, format);
+    const parsed = parseByteInput(edit.draft.replace(/\s+/g, ""), format);
     setEdit(null);
     if (parsed === null) return;
     const address = (view.start + index) & 0xffff;
@@ -107,30 +185,29 @@ export function MemorySliceView({
     }
   }
 
-  function handleAddressSubmit(e: React.FormEvent) {
+  function handleJumpSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const normalized = hexInput.trim().replace(/^\$/, "").replace(/^0x/i, "");
+    const normalized = jumpInput.trim().replace(/^\$/, "").replace(/^0x/i, "");
     if (/^[0-9a-fA-F]{1,4}$/.test(normalized)) {
       const addr = Number.parseInt(normalized, 16);
       onAddressChange(addr & 0xfff0);
+      setJumpInput("");
     }
-    setIsEditingAddress(false);
   }
 
   return (
     <div
-      ref={containerRef}
-      onWheel={handleWheel}
+      ref={setContainerRef}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       className={
         headless
-          ? "flex flex-col outline-none"
-          : "flex flex-col rounded-lg border border-slate-800 bg-slate-900/60 p-2.5 outline-none focus-within:border-slate-700 transition-colors"
+          ? "flex flex-col outline-none w-full"
+          : "flex flex-col rounded-lg border border-slate-800 bg-slate-900/60 p-2.5 outline-none focus-within:border-slate-700 transition-colors w-full"
       }
     >
-      {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-800/80 pb-2 mb-1">
+      {/* Header Bar: Address jump, quick steppers, page jumps */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2 mb-2">
         <div className="flex items-center gap-2">
           {!hideTitle && (
             <span className="text-xs font-semibold text-slate-200">
@@ -142,34 +219,55 @@ export function MemorySliceView({
               {badge}
             </span>
           )}
-          {isEditingAddress ? (
-            <form onSubmit={handleAddressSubmit} className="inline-flex">
+
+          {/* Jump to address input */}
+          <form onSubmit={handleJumpSubmit} className="flex items-center gap-1">
+            <div className="flex items-center rounded border border-slate-700 bg-slate-950 px-1.5 py-0.5 focus-within:border-amber-400">
+              <span className="text-amber-400 font-mono text-xs select-none mr-0.5">
+                $
+              </span>
               <input
-                autoFocus
-                className="w-16 rounded border border-amber-500 bg-slate-950 px-1 py-0.5 font-mono text-xs text-amber-300 outline-none"
+                className="w-14 bg-transparent font-mono text-xs font-bold text-amber-300 outline-none uppercase"
+                value={jumpInput}
+                onChange={(e) => setJumpInput(e.target.value)}
                 placeholder={hexWord(view.start)}
-                value={hexInput}
-                onChange={(e) => setHexInput(e.target.value)}
-                onBlur={() => setIsEditingAddress(false)}
+                title="Escriba una dirección hex (ej. 0000, 2000, 3000) y presione Enter o Ir"
               />
-            </form>
-          ) : (
+            </div>
+            <button
+              type="submit"
+              className="rounded bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+              title="Saltar a la dirección ingresada"
+            >
+              Ir
+            </button>
+          </form>
+
+          {/* Large distance jump buttons */}
+          <div className="flex items-center gap-1 font-mono text-[11px]">
             <button
               type="button"
-              onClick={() => {
-                setHexInput(hexWord(view.start));
-                setIsEditingAddress(true);
-              }}
-              className="rounded bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 font-mono text-xs text-amber-400 transition-colors cursor-pointer"
-              title="Haga clic para cambiar dirección"
+              onClick={() =>
+                onAddressChange((view.start - 0x100 + 0x10000) & 0xffff)
+              }
+              className="rounded bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+              title="Retroceder 256 bytes (-$100)"
             >
-              ${hexWord(view.start)}
+              -$100
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => onAddressChange((view.start + 0x100) & 0xffff)}
+              className="rounded bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+              title="Avanzar 256 bytes (+$100)"
+            >
+              +$100
+            </button>
+          </div>
         </div>
 
         {/* Action Controls & Steppers */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {headerControls}
 
           {/* Up/Down row steppers */}
@@ -179,18 +277,18 @@ export function MemorySliceView({
               onClick={() =>
                 onAddressChange((view.start - COLUMNS + 0x10000) & 0xffff)
               }
-              className="px-1.5 py-0.5 text-xs text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-l"
-              title="Línea anterior (-$10)"
-              aria-label="Línea anterior"
+              className="px-2 py-0.5 text-xs text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-l cursor-pointer"
+              title="Fila anterior (-$10)"
+              aria-label="Fila anterior"
             >
               ▲
             </button>
             <button
               type="button"
               onClick={() => onAddressChange((view.start + COLUMNS) & 0xffff)}
-              className="px-1.5 py-0.5 text-xs text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-r"
-              title="Línea siguiente (+$10)"
-              aria-label="Línea siguiente"
+              className="px-2 py-0.5 text-xs text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-r cursor-pointer"
+              title="Fila siguiente (+$10)"
+              aria-label="Fila siguiente"
             >
               ▼
             </button>
@@ -198,14 +296,20 @@ export function MemorySliceView({
         </div>
       </div>
 
-      {/* Hex Grid Table */}
-      <div className="mt-2 overflow-x-auto">
-        <table className="w-full border-collapse font-mono text-xs select-none">
+      {/* Hex / Bin Grid Table with visible borders and distinct boxes for every cell */}
+      <div className="w-full overflow-x-auto select-none">
+        <table
+          className={`w-full border-separate font-mono text-xs select-none ${
+            format === "bin"
+              ? "min-w-[1360px] border-spacing-x-2 border-spacing-y-1.5"
+              : "border-spacing-x-1 border-spacing-y-1"
+          }`}
+        >
           <thead>
-            <tr className="border-b border-slate-800/60 text-slate-500">
+            <tr className="text-slate-500">
               <th
                 scope="col"
-                className="py-1 text-left font-medium text-[11px] pr-2"
+                className="w-16 px-1 py-1 text-left font-semibold text-slate-400"
               >
                 Dir
               </th>
@@ -213,7 +317,9 @@ export function MemorySliceView({
                 <th
                   key={col}
                   scope="col"
-                  className="py-1 text-center font-normal text-[10px] w-6"
+                  className={`py-1 text-center font-semibold text-[11px] text-slate-400 ${
+                    format === "bin" ? "w-20 min-w-[76px]" : "min-w-[28px]"
+                  }`}
                 >
                   {hexByte(col)}
                 </th>
@@ -224,10 +330,10 @@ export function MemorySliceView({
             {Array.from({ length: rowsCount }, (_, row) => {
               const rowAddr = (view.start + row * COLUMNS) & 0xffff;
               return (
-                <tr key={rowAddr} className="hover:bg-slate-800/30">
+                <tr key={rowAddr} className="hover:bg-slate-800/20">
                   <th
                     scope="row"
-                    className="py-1 text-left font-normal text-slate-500 pr-2 select-text"
+                    className="w-16 px-1 py-1 text-left font-mono font-semibold text-slate-500 select-text"
                   >
                     ${hexWord(rowAddr)}
                   </th>
@@ -243,11 +349,11 @@ export function MemorySliceView({
                     const isEditing = edit?.index === idx;
 
                     return (
-                      <td key={col} className="p-0.5 text-center">
+                      <td key={col} className="p-0 text-center">
                         {isEditing ? (
                           <input
                             autoFocus
-                            className="w-full rounded bg-slate-950 text-center font-bold text-amber-300 outline-none ring-1 ring-amber-400"
+                            className="w-full rounded bg-slate-950 px-1 py-0.5 text-center font-bold text-amber-300 outline-none ring-1 ring-amber-400"
                             value={edit.draft}
                             onChange={(e) =>
                               setEdit({ index: idx, draft: e.target.value })
@@ -267,18 +373,39 @@ export function MemorySliceView({
                           <button
                             type="button"
                             onDoubleClick={() => beginEdit(idx)}
-                            className={`w-full rounded px-0.5 py-0.5 text-center transition-all ${
+                            className={`w-full rounded-md border px-1 py-0.5 text-center transition-all cursor-pointer shadow-xs ${
                               isPc
-                                ? "bg-amber-400 font-bold text-slate-950 shadow-sm"
+                                ? "border-amber-400 bg-amber-400 font-bold text-slate-950 shadow-sm"
                                 : isWrite
-                                  ? "bg-cyan-600 font-bold text-slate-50 ring-1 ring-cyan-400"
-                                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                                  ? "border-cyan-400 bg-cyan-600 font-bold text-slate-50 ring-1 ring-cyan-400"
+                                  : "border-slate-800 bg-slate-950/80 text-slate-200 hover:border-amber-400/60 hover:bg-slate-800/80"
+                            } ${
+                              format === "bin"
+                                ? "min-w-[76px] py-1 text-[11px]"
+                                : "min-w-[28px] text-xs font-semibold"
                             }`}
-                            title={`$${hexWord(addr)}: ${formatByte(val, format)}${
-                              isPc ? " (PC)" : ""
-                            }${isWrite ? " (Escrito)" : ""} - Doble clic para editar`}
+                            title={`$${hexWord(addr)}: ${formatDisplayByte(
+                              val,
+                              format,
+                            )}${isPc ? " (PC)" : ""}${
+                              isWrite ? " (Escrito)" : ""
+                            } - Doble clic para editar`}
                           >
-                            {formatByte(val, format)}
+                            {format === "bin" ? (
+                              <span className="inline-flex items-center justify-center gap-1 font-mono tracking-wider">
+                                <span>
+                                  {val.toString(2).padStart(8, "0").slice(0, 4)}
+                                </span>
+                                <span className="text-slate-600 font-bold">
+                                  ·
+                                </span>
+                                <span>
+                                  {val.toString(2).padStart(8, "0").slice(4)}
+                                </span>
+                              </span>
+                            ) : (
+                              formatDisplayByte(val, format)
+                            )}
                           </button>
                         )}
                       </td>

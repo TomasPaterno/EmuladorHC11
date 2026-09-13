@@ -32,7 +32,7 @@ import {
 
 const S19_NAME = /\.(s19|srec|mot)$/i;
 const LISTING_NAME = /\.(lst|txt)$/i;
-const SLICE_BYTE_COUNT = 64;
+const SLICE_BYTE_COUNT = 96;
 const DEFAULT_PANEL_WIDTH = 34; // 34% width for the program viewer by default
 
 const DEFAULT_BLOCK_ORDER = [
@@ -355,21 +355,17 @@ export function App() {
     }
   }
 
-  function handleDragStart(e: React.DragEvent<HTMLDivElement>, id: string) {
-    e.dataTransfer.setData("text/plain", id);
+  function handleDragStartBlock(id: string) {
     setDraggedBlockId(id);
   }
 
-  function handleDragOver(e: React.DragEvent<HTMLDivElement>, id: string) {
-    e.preventDefault();
-    if (draggedBlockId !== id) {
+  function handleDragOverBlock(id: string) {
+    if (draggedBlockId && draggedBlockId !== id) {
       setDragOverBlockId(id);
     }
   }
 
-  function handleDrop(e: React.DragEvent<HTMLDivElement>, targetId: string) {
-    e.preventDefault();
-    const sourceId = draggedBlockId || e.dataTransfer.getData("text/plain");
+  function handleDropBlock(sourceId: string, targetId: string) {
     setDraggedBlockId(null);
     setDragOverBlockId(null);
     if (!sourceId || sourceId === targetId) return;
@@ -379,11 +375,6 @@ export function App() {
     if (sourceIndex === -1 || targetIndex === -1) return;
 
     moveBlock(sourceIndex, targetIndex);
-  }
-
-  function handleDragEnd() {
-    setDraggedBlockId(null);
-    setDragOverBlockId(null);
   }
 
   function toggleCollapse(id: string) {
@@ -424,19 +415,15 @@ export function App() {
   }, []);
 
   // Render individual block by ID
-  function renderBlock(id: string, index: number) {
+  function renderBlock(id: string) {
     const commonProps = {
       isCollapsed: !!collapsedBlocks[id],
-      canMoveUp: index > 0,
-      canMoveDown: index < blockOrder.length - 1,
       onToggleCollapse: () => toggleCollapse(id),
-      onMoveUp: () => moveBlock(index, index - 1),
-      onMoveDown: () => moveBlock(index, index + 1),
-      onDragStart: handleDragStart,
-      onDragOver: handleDragOver,
-      onDrop: handleDrop,
-      onDragEnd: handleDragEnd,
+      onDragStartBlock: handleDragStartBlock,
+      onDragOverBlock: handleDragOverBlock,
+      onDropBlock: handleDropBlock,
       isDragOver: dragOverBlockId === id,
+      isDragging: draggedBlockId === id,
     };
 
     switch (id) {
@@ -717,7 +704,7 @@ export function App() {
           style={{ width: `${100 - filePanelWidth}%` }}
           className="w-full lg:w-auto flex-1 h-1/2 lg:h-full flex flex-col gap-3 overflow-y-auto pl-0 lg:pl-1 pr-1"
         >
-          {blockOrder.map((id, index) => renderBlock(id, index))}
+          {blockOrder.map((id) => renderBlock(id))}
         </div>
       </main>
 
