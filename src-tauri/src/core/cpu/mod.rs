@@ -11,5 +11,7 @@ mod isa_lab;
 mod isa_spec;
 #[cfg(test)]
 mod isa_wave1;
+#[cfg(test)]
+mod isa_wave2;
 
 pub use registers::Registers;

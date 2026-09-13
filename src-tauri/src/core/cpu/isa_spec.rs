@@ -390,14 +390,14 @@ mod tests {
         assert!(
             implemented_rows()
                 .iter()
-                .all(|row| !(row.prefix.is_none() && row.opcode == 0xFF))
+                .all(|row| !(row.prefix.is_none() && row.opcode == 0x00))
         );
-        let mut machine = ready(&[0xFF]);
+        let mut machine = ready(&[0x00]);
         assert!(matches!(
             machine.step(),
             Err(CoreError::UnimplementedOpcode {
                 pc: 0,
-                opcode: 0xFF
+                opcode: 0x00
             })
         ));
     }

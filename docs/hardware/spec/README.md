@@ -8,7 +8,7 @@ ciclos/CCR ejecutados y las constantes E9; no genera `decode.rs`.
 - `cpu-registers.yaml`: modelo CPU común.
 - `memory-map.yaml`: mapa al salir de reset por perfil.
 - `interrupt-vectors.yaml`: direcciones de vectores.
-- `instructions.yaml`: 172 filas de Table 4-2 (opcode, modo, ciclos, CCR).
+- `instructions.yaml`: 287 filas de Table 4-2 (opcode, modo, ciclos, CCR).
 
 Estados `transcribed_needs_visual_check` y `pending_*` bloquean generación de
 código. Una entrada sólo podrá pasar a `human_verified` después de comparar

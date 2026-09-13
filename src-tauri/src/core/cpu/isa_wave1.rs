@@ -187,7 +187,7 @@ mod tests {
 
     #[test]
     fn run_stops_on_unimplemented() {
-        let mut machine = ready(0x0000, &[0x01, 0x01, 0xFF]);
+        let mut machine = ready(0x0000, &[0x01, 0x01, 0x00]);
         let outcome = machine.run(10).expect("run");
         assert_eq!(outcome.steps_taken, 2);
         assert!(matches!(
@@ -195,12 +195,12 @@ mod tests {
             crate::core::cpu::trace::RunStop::Unimplemented
         ));
         assert_eq!(machine.cpu().pc, 0x0002);
-        let error = machine.step().expect_err("FF");
+        let error = machine.step().expect_err("00");
         assert!(matches!(
             error,
             CoreError::UnimplementedOpcode {
                 pc: 0x0002,
-                opcode: 0xFF
+                opcode: 0x00
             }
         ));
     }
@@ -436,7 +436,10 @@ mod tests {
                 }
             }
         }
-        assert_eq!(implemented, 172);
+        assert_eq!(
+            implemented,
+            crate::core::cpu::decode::implemented_rows().len()
+        );
     }
 
     fn step_if_implemented(image: &[u8]) -> Option<u64> {

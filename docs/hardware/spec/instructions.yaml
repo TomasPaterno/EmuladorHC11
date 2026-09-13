@@ -3,8 +3,8 @@ policy: ../../decisions/0004-source-policy.md
 document: E5
 section: "4.6, Table 4-2"
 note: >
-  172 filas opcode+modo transcritas tras revisión visual de E5 pp. 80-87
-  (ola 1 y ola de laboratorio). No generan decode.rs: CI compara este YAML
+  287 filas opcode+modo transcritas tras revisión visual de E5 pp. 80-87
+  (olas 1–2 y laboratorio). No generan decode.rs: CI compara este YAML
   con el inventario de decode y con el contrato de ciclos/CCR.
 instructions:
   - mnemonic: NOP
@@ -3790,4 +3790,2534 @@ instructions:
       section: "4.6, Table 4-2"
       printed_page: 86
       pdf_page: 86
+    review_status: human_verified
+  - mnemonic: ADCB
+    mode: DIR
+    opcode: [0xD9]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADCB
+    mode: EXT
+    opcode: [0xF9]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADCB
+    mode: INDX
+    opcode: [0xE9]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADCB
+    mode: INDY
+    opcode: [0x18, 0xE9]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDA
+    mode: EXT
+    opcode: [0xBB]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDA
+    mode: INDX
+    opcode: [0xAB]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDB
+    mode: DIR
+    opcode: [0xDB]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDB
+    mode: EXT
+    opcode: [0xFB]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDB
+    mode: INDX
+    opcode: [0xEB]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDD
+    mode: DIR
+    opcode: [0xD3]
+    bytes: 2
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDD
+    mode: EXT
+    opcode: [0xF3]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDD
+    mode: INDX
+    opcode: [0xE3]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ADDD
+    mode: INDY
+    opcode: [0x18, 0xE3]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ANDA
+    mode: DIR
+    opcode: [0x94]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ANDA
+    mode: EXT
+    opcode: [0xB4]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ANDA
+    mode: INDX
+    opcode: [0xA4]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: BITA
+    mode: DIR
+    opcode: [0x95]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 82
+      pdf_page: 82
+    review_status: human_verified
+  - mnemonic: BITA
+    mode: EXT
+    opcode: [0xB5]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 82
+      pdf_page: 82
+    review_status: human_verified
+  - mnemonic: BITA
+    mode: INDX
+    opcode: [0xA5]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 82
+      pdf_page: 82
+    review_status: human_verified
+  - mnemonic: CMPA
+    mode: DIR
+    opcode: [0x91]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CMPA
+    mode: EXT
+    opcode: [0xB1]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CMPA
+    mode: INDX
+    opcode: [0xA1]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: EORA
+    mode: DIR
+    opcode: [0x98]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: EORA
+    mode: EXT
+    opcode: [0xB8]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: EORA
+    mode: INDX
+    opcode: [0xA8]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: ORAA
+    mode: DIR
+    opcode: [0x9A]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ORAA
+    mode: EXT
+    opcode: [0xBA]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ORAA
+    mode: INDX
+    opcode: [0xAA]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: SUBA
+    mode: EXT
+    opcode: [0xB0]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: SUBA
+    mode: INDX
+    opcode: [0xA0]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: SUBB
+    mode: DIR
+    opcode: [0xD0]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: SUBB
+    mode: EXT
+    opcode: [0xF0]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: SUBB
+    mode: INDX
+    opcode: [0xE0]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: update,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: LDD
+    mode: EXT
+    opcode: [0xFC]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 84
+      pdf_page: 84
+    review_status: human_verified
+  - mnemonic: LDD
+    mode: INDX
+    opcode: [0xEC]
+    bytes: 2
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 84
+      pdf_page: 84
+    review_status: human_verified
+  - mnemonic: LDX
+    mode: EXT
+    opcode: [0xFE]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 84
+      pdf_page: 84
+    review_status: human_verified
+  - mnemonic: LDX
+    mode: INDX
+    opcode: [0xEE]
+    bytes: 2
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 84
+      pdf_page: 84
+    review_status: human_verified
+  - mnemonic: STAB
+    mode: INDX
+    opcode: [0xE7]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: STD
+    mode: EXT
+    opcode: [0xFD]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: STD
+    mode: INDX
+    opcode: [0xED]
+    bytes: 2
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: STX
+    mode: EXT
+    opcode: [0xFF]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: STX
+    mode: INDX
+    opcode: [0xEF]
+    bytes: 2
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: ANDB
+    mode: IMM
+    opcode: [0xC4]
+    bytes: 2
+    cycles: 2
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ANDB
+    mode: DIR
+    opcode: [0xD4]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ANDB
+    mode: EXT
+    opcode: [0xF4]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ANDB
+    mode: INDX
+    opcode: [0xE4]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ANDB
+    mode: INDY
+    opcode: [0x18, 0xE4]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: BITB
+    mode: IMM
+    opcode: [0xC5]
+    bytes: 2
+    cycles: 2
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 82
+      pdf_page: 82
+    review_status: human_verified
+  - mnemonic: BITB
+    mode: DIR
+    opcode: [0xD5]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 82
+      pdf_page: 82
+    review_status: human_verified
+  - mnemonic: BITB
+    mode: EXT
+    opcode: [0xF5]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 82
+      pdf_page: 82
+    review_status: human_verified
+  - mnemonic: BITB
+    mode: INDX
+    opcode: [0xE5]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 82
+      pdf_page: 82
+    review_status: human_verified
+  - mnemonic: BITB
+    mode: INDY
+    opcode: [0x18, 0xE5]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 82
+      pdf_page: 82
+    review_status: human_verified
+  - mnemonic: CMPB
+    mode: IMM
+    opcode: [0xC1]
+    bytes: 2
+    cycles: 2
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CMPB
+    mode: DIR
+    opcode: [0xD1]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CMPB
+    mode: EXT
+    opcode: [0xF1]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CMPB
+    mode: INDX
+    opcode: [0xE1]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CMPB
+    mode: INDY
+    opcode: [0x18, 0xE1]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: EORB
+    mode: IMM
+    opcode: [0xC8]
+    bytes: 2
+    cycles: 2
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: EORB
+    mode: DIR
+    opcode: [0xD8]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: EORB
+    mode: EXT
+    opcode: [0xF8]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: EORB
+    mode: INDX
+    opcode: [0xE8]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: EORB
+    mode: INDY
+    opcode: [0x18, 0xE8]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: ORAB
+    mode: IMM
+    opcode: [0xCA]
+    bytes: 2
+    cycles: 2
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ORAB
+    mode: DIR
+    opcode: [0xDA]
+    bytes: 2
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ORAB
+    mode: EXT
+    opcode: [0xFA]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ORAB
+    mode: INDX
+    opcode: [0xEA]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ORAB
+    mode: INDY
+    opcode: [0x18, 0xEA]
+    bytes: 3
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ABX
+    mode: INH
+    opcode: [0x3A]
+    bytes: 1
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: unchanged,
+        z: unchanged,
+        v: unchanged,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ABY
+    mode: INH
+    opcode: [0x18, 0x3A]
+    bytes: 2
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: unchanged,
+        z: unchanged,
+        v: unchanged,
+        c: unchanged,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: SUBD
+    mode: IMM
+    opcode: [0x83]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: SUBD
+    mode: DIR
+    opcode: [0x93]
+    bytes: 2
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: SUBD
+    mode: EXT
+    opcode: [0xB3]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: SUBD
+    mode: INDX
+    opcode: [0xA3]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: SUBD
+    mode: INDY
+    opcode: [0x18, 0xA3]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 86
+      pdf_page: 86
+    review_status: human_verified
+  - mnemonic: CPD
+    mode: IMM
+    opcode: [0x1A, 0x83]
+    bytes: 4
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPD
+    mode: DIR
+    opcode: [0x1A, 0x93]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPD
+    mode: EXT
+    opcode: [0x1A, 0xB3]
+    bytes: 4
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPD
+    mode: INDX
+    opcode: [0x1A, 0xA3]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPD
+    mode: INDY
+    opcode: [0xCD, 0xA3]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPX
+    mode: IMM
+    opcode: [0x8C]
+    bytes: 3
+    cycles: 4
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPX
+    mode: DIR
+    opcode: [0x9C]
+    bytes: 2
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPX
+    mode: EXT
+    opcode: [0xBC]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPX
+    mode: INDX
+    opcode: [0xAC]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPX
+    mode: INDY
+    opcode: [0xCD, 0xAC]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPY
+    mode: IMM
+    opcode: [0x18, 0x8C]
+    bytes: 4
+    cycles: 5
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPY
+    mode: DIR
+    opcode: [0x18, 0x9C]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPY
+    mode: EXT
+    opcode: [0x18, 0xBC]
+    bytes: 4
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPY
+    mode: INDX
+    opcode: [0x1A, 0xAC]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: CPY
+    mode: INDY
+    opcode: [0x18, 0xAC]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: ASL
+    mode: EXT
+    opcode: [0x78]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ASL
+    mode: INDX
+    opcode: [0x68]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ASL
+    mode: INDY
+    opcode: [0x18, 0x68]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ASR
+    mode: EXT
+    opcode: [0x77]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ASR
+    mode: INDX
+    opcode: [0x67]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: ASR
+    mode: INDY
+    opcode: [0x18, 0x67]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: LSR
+    mode: EXT
+    opcode: [0x74]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: clear,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: LSR
+    mode: INDX
+    opcode: [0x64]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: clear,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: LSR
+    mode: INDY
+    opcode: [0x18, 0x64]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: clear,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ROL
+    mode: EXT
+    opcode: [0x79]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ROL
+    mode: INDX
+    opcode: [0x69]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ROL
+    mode: INDY
+    opcode: [0x18, 0x69]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ROR
+    mode: EXT
+    opcode: [0x76]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ROR
+    mode: INDX
+    opcode: [0x66]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: ROR
+    mode: INDY
+    opcode: [0x18, 0x66]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: TST
+    mode: EXT
+    opcode: [0x7D]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: clear,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 87
+      pdf_page: 87
+    review_status: human_verified
+  - mnemonic: TST
+    mode: INDX
+    opcode: [0x6D]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: clear,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 87
+      pdf_page: 87
+    review_status: human_verified
+  - mnemonic: TST
+    mode: INDY
+    opcode: [0x18, 0x6D]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: clear,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 87
+      pdf_page: 87
+    review_status: human_verified
+  - mnemonic: NEG
+    mode: EXT
+    opcode: [0x70]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: NEG
+    mode: INDX
+    opcode: [0x60]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: NEG
+    mode: INDY
+    opcode: [0x18, 0x60]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
+    review_status: human_verified
+  - mnemonic: COM
+    mode: EXT
+    opcode: [0x73]
+    bytes: 3
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: set,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: COM
+    mode: INDX
+    opcode: [0x63]
+    bytes: 2
+    cycles: 6
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: set,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: COM
+    mode: INDY
+    opcode: [0x18, 0x63]
+    bytes: 3
+    cycles: 7
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: clear,
+        c: set,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 83
+      pdf_page: 83
+    review_status: human_verified
+  - mnemonic: ASLD
+    mode: INH
+    opcode: [0x05]
+    bytes: 1
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: update,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 81
+      pdf_page: 81
+    review_status: human_verified
+  - mnemonic: LSRD
+    mode: INH
+    opcode: [0x04]
+    bytes: 1
+    cycles: 3
+    ccr:
+      {
+        s: unchanged,
+        x: unchanged,
+        h: unchanged,
+        i: unchanged,
+        n: clear,
+        z: update,
+        v: update,
+        c: update,
+      }
+    source:
+      source_id: E5
+      section: "4.6, Table 4-2"
+      printed_page: 85
+      pdf_page: 85
     review_status: human_verified

@@ -1,4 +1,4 @@
-//! Semántica de la ola 1 y la ola de laboratorio. Flags según E5 Table 4-2.
+//! Semántica de las olas 1–2 y laboratorio. Flags según E5 Table 4-2.
 //!
 //! source_id: E5
 //! section: 4.6, Table 4-2
@@ -187,6 +187,44 @@ pub fn execute(ctx: &mut ExecCtx<'_>, decoded: Decoded, start_pc: u16) {
             let value = ctx.acc(acc);
             set_tst(&mut ctx.cpu.ccr, value);
         }
+        Op::ComMem(mode) => {
+            let address = store_address(ctx.cpu, ctx.bus, start_pc, decoded.prefix, mode);
+            let value = !ctx.bus.read_byte(address);
+            ctx.write(address, value);
+            set_com(&mut ctx.cpu.ccr, value);
+        }
+        Op::NegMem(mode) => {
+            let address = store_address(ctx.cpu, ctx.bus, start_pc, decoded.prefix, mode);
+            let value = neg8(ctx.bus.read_byte(address), &mut ctx.cpu.ccr);
+            ctx.write(address, value);
+        }
+        Op::AslMem(mode) => rmw8(ctx, start_pc, decoded.prefix, mode, asl8),
+        Op::AsrMem(mode) => rmw8(ctx, start_pc, decoded.prefix, mode, asr8),
+        Op::LsrMem(mode) => rmw8(ctx, start_pc, decoded.prefix, mode, lsr8),
+        Op::RolMem(mode) => rmw_rotate(ctx, start_pc, decoded.prefix, mode, rol8),
+        Op::RorMem(mode) => rmw_rotate(ctx, start_pc, decoded.prefix, mode, ror8),
+        Op::TstMem(mode) => {
+            let address = store_address(ctx.cpu, ctx.bus, start_pc, decoded.prefix, mode);
+            set_tst(&mut ctx.cpu.ccr, ctx.bus.read_byte(address));
+        }
+        Op::Asld => {
+            let d = ctx.cpu.d();
+            ctx.cpu.ccr.c = d & 0x8000 != 0;
+            let result = d << 1;
+            ctx.cpu.set_d(result);
+            finish_shift16(&mut ctx.cpu.ccr, result);
+        }
+        Op::Lsrd => {
+            let d = ctx.cpu.d();
+            ctx.cpu.ccr.c = d & 1 != 0;
+            let result = d >> 1;
+            ctx.cpu.set_d(result);
+            ctx.cpu.ccr.n = false;
+            ctx.cpu.ccr.z = result == 0;
+            ctx.cpu.ccr.v = ctx.cpu.ccr.n ^ ctx.cpu.ccr.c;
+        }
+        Op::Abx => ctx.cpu.x = ctx.cpu.x.wrapping_add(u16::from(ctx.cpu.b)),
+        Op::Aby => ctx.cpu.y = ctx.cpu.y.wrapping_add(u16::from(ctx.cpu.b)),
         Op::Aba => ctx.cpu.a = add8(ctx.cpu.a, ctx.cpu.b, false, &mut ctx.cpu.ccr),
         Op::Sba => ctx.cpu.a = sub8(ctx.cpu.a, ctx.cpu.b, false, true, &mut ctx.cpu.ccr),
         Op::Cba => {
@@ -244,6 +282,21 @@ pub fn execute(ctx: &mut ExecCtx<'_>, decoded: Decoded, start_pc: u16) {
             let rhs = read_operand8(ctx.cpu, ctx.bus, start_pc, decoded.prefix, mode);
             let value = sub8(ctx.acc(acc), rhs, false, true, &mut ctx.cpu.ccr);
             ctx.set_acc(acc, value);
+        }
+        Op::Sub16(mode) => {
+            let rhs = read_operand16(ctx.cpu, ctx.bus, start_pc, decoded.prefix, mode);
+            let value = sub16(ctx.cpu.d(), rhs, &mut ctx.cpu.ccr);
+            ctx.cpu.set_d(value);
+        }
+        Op::Cmp16(reg, mode) => {
+            let rhs = read_operand16(ctx.cpu, ctx.bus, start_pc, decoded.prefix, mode);
+            let left = match reg {
+                WordReg::D => ctx.cpu.d(),
+                WordReg::X => ctx.cpu.x,
+                WordReg::Y => ctx.cpu.y,
+                WordReg::S => ctx.cpu.sp,
+            };
+            sub16(left, rhs, &mut ctx.cpu.ccr);
         }
         Op::And8(acc, mode) => logic(ctx, acc, mode, start_pc, decoded.prefix, |l, r| l & r),
         Op::Ora8(acc, mode) => logic(ctx, acc, mode, start_pc, decoded.prefix, |l, r| l | r),
@@ -335,6 +388,31 @@ pub fn execute(ctx: &mut ExecCtx<'_>, decoded: Decoded, start_pc: u16) {
         }
     }
     ctx.cpu.pc = start_pc.wrapping_add(decoded.bytes);
+}
+
+fn rmw8(
+    ctx: &mut ExecCtx<'_>,
+    start_pc: u16,
+    prefix: Option<u8>,
+    mode: Mode,
+    op: fn(u8, &mut Ccr) -> u8,
+) {
+    let address = store_address(ctx.cpu, ctx.bus, start_pc, prefix, mode);
+    let value = op(ctx.bus.read_byte(address), &mut ctx.cpu.ccr);
+    ctx.write(address, value);
+}
+
+fn rmw_rotate(
+    ctx: &mut ExecCtx<'_>,
+    start_pc: u16,
+    prefix: Option<u8>,
+    mode: Mode,
+    op: fn(u8, bool, &mut Ccr) -> u8,
+) {
+    let address = store_address(ctx.cpu, ctx.bus, start_pc, prefix, mode);
+    let carry = ctx.cpu.ccr.c;
+    let value = op(ctx.bus.read_byte(address), carry, &mut ctx.cpu.ccr);
+    ctx.write(address, value);
 }
 
 fn logic(
@@ -444,6 +522,15 @@ fn add16(left: u16, right: u16, ccr: &mut Ccr) -> u16 {
     result
 }
 
+fn sub16(left: u16, right: u16, ccr: &mut Ccr) -> u16 {
+    let result = left.wrapping_sub(right);
+    ccr.n = result & 0x8000 != 0;
+    ccr.z = result == 0;
+    ccr.v = ((left ^ right) & (left ^ result) & 0x8000) != 0;
+    ccr.c = left < right;
+    result
+}
+
 fn inc8(value: u8, ccr: &mut Ccr) -> u8 {
     let result = value.wrapping_add(1);
     ccr.n = result & 0x80 != 0;
@@ -504,6 +591,12 @@ fn finish_shift(ccr: &mut Ccr, result: u8) -> u8 {
     ccr.z = result == 0;
     ccr.v = ccr.n ^ ccr.c;
     result
+}
+
+fn finish_shift16(ccr: &mut Ccr, result: u16) {
+    ccr.n = result & 0x8000 != 0;
+    ccr.z = result == 0;
+    ccr.v = ccr.n ^ ccr.c;
 }
 
 fn branch_taken(kind: Branch, ccr: &Ccr) -> bool {

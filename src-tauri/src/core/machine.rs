@@ -283,7 +283,7 @@ mod tests {
     #[test]
     fn unknown_opcode_leaves_state_intact() {
         let mut machine = machine_with_reset_vector(0x0000);
-        machine.load_bytes(0x0000, &[0xFF]).expect("RAM");
+        machine.load_bytes(0x0000, &[0x00]).expect("RAM");
         machine.reset();
         let before = machine.clone();
         let error = machine.step().expect_err("opcode desconocido");
@@ -291,7 +291,7 @@ mod tests {
             error,
             CoreError::UnimplementedOpcode {
                 pc: 0x0000,
-                opcode: 0xFF
+                opcode: 0x00
             }
         );
         assert_eq!(machine.cpu().pc, before.cpu().pc);

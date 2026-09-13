@@ -239,7 +239,7 @@ mod tests {
 
     #[test]
     fn reserved_page_bytes_still_unimplemented() {
-        let mut machine = ready(0x0000, &[0x1A, 0x83]);
+        let mut machine = ready(0x0000, &[0x1A, 0x00]);
         assert!(matches!(
             machine.step(),
             Err(CoreError::UnimplementedOpcode {

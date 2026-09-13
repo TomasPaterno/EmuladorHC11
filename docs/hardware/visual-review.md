@@ -64,3 +64,25 @@ renderizadas otra vez:
 Hallazgo corregido: `CMPA INDY` en `instructions.yaml` tenía `c: unchanged`;
 Table 4-2 p. 83 actualiza C en todos los modos de CMPA. El execute ya lo
 hacía. Desvíos de emulador: D-004 (reset a 0) y D-005 (overlay de laboratorio).
+
+## Ola 2 — modos restantes y grupo acotado (2026-09-13)
+
+Revisión visual de Table 4-2 en las páginas renderizadas
+`docs/hardware/work/table42/e5-p-080.png` … `e5-p-087.png` (E5 Rev. 5):
+
+- p. 81: `ABX` `$3A`/3c y `ABY` `$18 3A`/4c (CCR inalterado);
+  `ADCB`/`ADDB`/`ADDD` modos de memoria; `ANDB` 5 modos; `ASL` EXT/INDX/INDY
+  `$78/$68/$18 68`; `ASLD` `$05`/3c; `ASR` memoria `$77/$67/$18 67`.
+- p. 82: `BITB` IMM/DIR/EXT/INDX/INDY `$C5/$D5/$F5/$E5/$18 E5`.
+- p. 83: `CMPB` 5 modos; `COM` EXT/INDX/INDY `$73/$63/$18 63` (V=0, C=1);
+  `CPD` `$1A 83/93/B3/A3` e INDY `$CD A3`; `CPX` INDY `$CD AC`;
+  `CPY` `$18 8C/9C/BC/AC` e INDX `$1A AC`; `EORB` 5 modos.
+- p. 84: `LDD`/`LDX` EXT/INDX y el resto de cargas de 16 bits ya cubiertas.
+- p. 85: `LSR` EXT/INDX/INDY `$74/$64/$18 64` y `LSRD` `$04` (N=0);
+  `NEG` memoria `$70/$60/$18 60`; `ORAB` 5 modos; `ROL`/`ROR` memoria.
+- p. 86: `STAB` INDX `$E7`; `STD`/`STX` EXT/INDX; `SUBA`/`SUBB` EXT/INDX;
+  `SUBD` `$83/$93/$B3/$A3/$18 A3` (H inalterado, N/Z/V/C actualizan).
+- p. 87: `TST` EXT/INDX/INDY `$7D/$6D/$18 6D` (V=0, C=0).
+
+Cada fila nueva de `instructions.yaml` lleva `source_id: E5`,
+`visual_review: true` y `review_status: human_verified`.
