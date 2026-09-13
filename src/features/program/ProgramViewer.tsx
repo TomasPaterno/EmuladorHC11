@@ -3,7 +3,6 @@ import { LoadSummary } from "../../ipc/emulator";
 import {
   parseCodeLine,
   updateProgramByte,
-  updateProgramLineBytes,
   updateProgramLineText,
   updateProgramLineAddress,
 } from "./programSync";
@@ -60,7 +59,7 @@ interface ProgramViewerProps {
 
 interface EditingCell {
   lineIndex: number;
-  field: "byte" | "bytes" | "instruction" | "address";
+  field: "byte" | "instruction" | "address";
   byteIndex?: number;
   initialValue: string;
 }
@@ -164,19 +163,6 @@ export function ProgramViewer({
           if (updated) {
             onUpdateProgramContent?.(updated);
           }
-        }
-      } else if (field === "bytes" && targetLine.address !== null) {
-        const byteTokens = trimmed.split(/\s+/).filter(Boolean);
-        const result = updateProgramLineBytes(
-          fileContent,
-          lineIndex,
-          byteTokens,
-        );
-        if (result) {
-          for (const write of result.writes) {
-            await onWriteByte?.(write.address, write.value);
-          }
-          onUpdateProgramContent?.(result.updatedContent);
         }
       } else if (field === "instruction") {
         const updated = updateProgramLineText(fileContent, lineIndex, trimmed);
@@ -305,7 +291,7 @@ export function ProgramViewer({
                 <th
                   scope="col"
                   className="w-32 px-2.5 py-1.5 text-left font-bold"
-                  title="Doble clic en un byte o en la celda para editar"
+                  title="Doble clic en un byte para editar"
                 >
                   Bytes
                 </th>
@@ -323,8 +309,6 @@ export function ProgramViewer({
                 const isActive = idx === activeLineIndex;
                 const isEditingAddr =
                   editing?.lineIndex === idx && editing.field === "address";
-                const isEditingBytes =
-                  editing?.lineIndex === idx && editing.field === "bytes";
                 const isEditingInst =
                   editing?.lineIndex === idx && editing.field === "instruction";
 
@@ -392,40 +376,14 @@ export function ProgramViewer({
 
                     {/* Bytes */}
                     <td
-                      onDoubleClick={(e) => {
-                        if (
-                          e.target === e.currentTarget &&
-                          line.bytes.length > 0 &&
-                          line.address !== null
-                        ) {
-                          setEditing({
-                            lineIndex: idx,
-                            field: "bytes",
-                            initialValue: line.bytes.join(" "),
-                          });
-                          setEditValue(line.bytes.join(" "));
-                        }
-                      }}
                       title={
                         line.bytes.length > 0
-                          ? "Doble clic en un byte para editarlo individualmente"
+                          ? "Doble clic en un byte para editarlo"
                           : undefined
                       }
                       className="px-2.5 py-1.5 font-mono text-slate-200 text-sm sm:text-base font-semibold"
                     >
-                      {isEditingBytes ? (
-                        <input
-                          ref={editInputRef}
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") void handleCommit();
-                            if (e.key === "Escape") setEditing(null);
-                          }}
-                          onBlur={() => void handleCommit()}
-                          className="w-32 rounded bg-slate-800 border border-amber-400 px-1 py-0.5 text-xs sm:text-sm font-mono text-amber-300 font-bold focus:outline-none focus:ring-1 focus:ring-amber-400"
-                        />
-                      ) : line.bytes.length > 0 ? (
+                      {line.bytes.length > 0 ? (
                         <div className="flex flex-wrap items-center gap-1.5">
                           {line.bytes.map((byteHex, bIdx) => {
                             const isThisByteEditing =

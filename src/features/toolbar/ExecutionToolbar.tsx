@@ -12,7 +12,6 @@ interface ExecutionToolbarProps {
   onRun: () => void;
   onOpenS19: () => void;
   onOpenListing: () => void;
-  onOpenManualLoad: () => void;
   theme?: "dark" | "light";
   onToggleTheme?: () => void;
   onOpenSettings?: () => void;
@@ -29,7 +28,6 @@ export function ExecutionToolbar({
   onRun,
   onOpenS19,
   onOpenListing,
-  onOpenManualLoad,
   theme = "dark",
   onToggleTheme,
   onOpenSettings,
@@ -151,15 +149,6 @@ export function ExecutionToolbar({
             className="rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors disabled:opacity-50 cursor-pointer"
           >
             S19
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onOpenManualLoad}
-            className="rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50 cursor-pointer"
-            title="Cargar bytes hexadecimales arbitrarios"
-          >
-            Bytes...
           </button>
         </div>
 

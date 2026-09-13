@@ -10,7 +10,6 @@ import { MemorySliceView } from "./features/memory/MemorySliceView";
 import { ProgramViewer } from "./features/program/ProgramViewer";
 import { updateProgramByte } from "./features/program/programSync";
 import { ExecutionToolbar } from "./features/toolbar/ExecutionToolbar";
-import { ManualLoadModal } from "./features/toolbar/ManualLoadModal";
 import { SettingsModal } from "./features/toolbar/SettingsModal";
 import {
   CpuSnapshot,
@@ -22,7 +21,6 @@ import {
   RunInfo,
   alignedRowStart,
   inspectMemory,
-  loadBytes,
   loadListing,
   loadS19,
   parseIpcError,
@@ -179,7 +177,6 @@ export function App() {
 
   // Controls
   const [maxSteps, setMaxSteps] = useState("100");
-  const [isManualLoadOpen, setIsManualLoadOpen] = useState(false);
 
   // File Inputs
   const s19InputRef = useRef<HTMLInputElement>(null);
@@ -319,23 +316,6 @@ export function App() {
 
       await Promise.all([
         fetchProgramSlice(programSliceStart),
-        fetchDataSlice(dataSliceStart),
-      ]);
-      setError(null);
-    } catch (cause) {
-      setError(formatError(parseIpcError(cause)));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleManualLoad(start: number, data: number[]) {
-    setBusy(true);
-    try {
-      const next = await loadBytes(start, data);
-      setSnapshot(next);
-      await Promise.all([
-        fetchProgramSlice(start),
         fetchDataSlice(dataSliceStart),
       ]);
       setError(null);
@@ -754,7 +734,6 @@ export function App() {
         onRun={() => void handleRun()}
         onOpenS19={() => s19InputRef.current?.click()}
         onOpenListing={() => listingInputRef.current?.click()}
-        onOpenManualLoad={() => setIsManualLoadOpen(true)}
         theme={theme}
         onToggleTheme={() =>
           setTheme((curr) => (curr === "dark" ? "light" : "dark"))
@@ -854,14 +833,6 @@ export function App() {
         disabled={busy}
         onChange={(e) => void onListingSelected(e)}
         aria-hidden="true"
-      />
-
-      {/* Manual Bytes Entry Modal */}
-      <ManualLoadModal
-        isOpen={isManualLoadOpen}
-        onClose={() => setIsManualLoadOpen(false)}
-        onLoad={handleManualLoad}
-        busy={busy}
       />
 
       {/* Settings & Font Customization Modal */}
