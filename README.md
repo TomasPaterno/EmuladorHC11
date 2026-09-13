@@ -9,6 +9,13 @@ de 172 filas verificadas de E5 Table 4-2 y un visor hex de 256
 bytes con el último cambio. El resto de la ISA y los periféricos todavía no
 están implementados.
 
+## Descarga e Instalación
+
+Para utilizar el emulador directamente sin necesidad de compilar código ni configurar herramientas de desarrollo:
+
+- 🚀 **[Descargas en GitHub Releases](https://github.com/TomasPaterno/EmuladorHC11/releases)**: Instaladores `.exe` (Windows), `.dmg` (macOS) y `.AppImage` / `.deb` (Linux).
+- 📖 **[Guía de Instalación Paso a Paso](docs/instalacion.md)**: Instrucciones detalladas para instalar y ejecutar en cada sistema operativo (incluye cómo omitir advertencias iniciales en Windows SmartScreen y Apple Gatekeeper).
+
 ## Documentación
 
 - [Estado actual](docs/status.md)

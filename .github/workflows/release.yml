@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Etiqueta de versión para el Release (ej. v0.1.0)"
+        required: false
+        default: "v0.1.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: ""
+          - os: macos-latest
+            args: "--target universal-apple-darwin"
+          - os: ubuntu-22.04
+            args: ""
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v5
+
+      - name: Determinar etiqueta de versión
+        id: tag_info
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+            if [ -z "$TAG" ]; then
+              TAG="v$(node -p "require('./package.json').version")"
+            fi
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Instalar dependencias del sistema en Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Configurar Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.96.0
+
+      - name: Agregar targets de macOS para binario universal
+        if: runner.os == 'macOS'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Configurar caché de Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Instalar dependencias de frontend
+        run: npm ci
+
+      - name: Compilar y empaquetar con Tauri Action
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ steps.tag_info.outputs.tag }}
+          releaseName: "Emulador HC11 ${{ steps.tag_info.outputs.tag }}"
+          releaseBody: |
+            ### Emulador Motorola 68HC11
+
+            Descargue el instalador o ejecutable correspondiente a su sistema operativo en la sección de **Assets** abajo:
+
+            - **Windows**: `Emulador-HC11_..._x64-setup.exe`
+            - **macOS**: `Emulador-HC11_..._universal.dmg` (compatible con Apple Silicon e Intel)
+            - **Linux**: `Emulador-HC11_..._amd64.AppImage` (portable universal) o `.deb` (Debian/Ubuntu)
+
+            Para instrucciones detalladas sobre cómo abrir y configurar la aplicación paso a paso (incluyendo cómo saltar las advertencias de seguridad sin costo en Windows y macOS), consulte la [Guía de Instalación](https://github.com/${{ github.repository }}/blob/main/docs/instalacion.md).
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
