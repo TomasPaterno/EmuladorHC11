@@ -119,3 +119,22 @@ html.theme-light ::-webkit-scrollbar-thumb:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 1);
 }
+
+/* Datapath & Execution Visualizer Animations */
+@keyframes busFlowRight {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes busFlowLeft {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 24;
+  }
+}

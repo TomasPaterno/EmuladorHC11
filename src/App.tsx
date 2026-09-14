@@ -12,6 +12,8 @@ import { updateProgramByte } from "./features/program/programSync";
 import { StackViewer } from "./features/stack/StackViewer";
 import { ExecutionToolbar } from "./features/toolbar/ExecutionToolbar";
 import { SettingsModal } from "./features/toolbar/SettingsModal";
+import { HistoryItem } from "./features/visualizer/ExecutionTimeline";
+import { VisualExecutionCard } from "./features/visualizer/VisualExecutionCard";
 import {
   CpuSnapshot,
   ExecutionResult,
@@ -40,6 +42,7 @@ const DEFAULT_BLOCK_ORDER = [
   "registers",
   "ccr",
   "lastStep",
+  "visualizer",
   "stack",
   "memProgram",
   "memData",
@@ -56,6 +59,7 @@ function formatError(error: IpcError) {
 export function App() {
   const [snapshot, setSnapshot] = useState<CpuSnapshot | null>(null);
   const [lastStep, setLastStep] = useState<LastStep | null>(null);
+  const [executionHistory, setExecutionHistory] = useState<HistoryItem[]>([]);
   const [runInfo, setRunInfo] = useState<RunInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -88,8 +92,23 @@ export function App() {
               parsed.push("stack");
             }
           }
-          if (parsed.length === DEFAULT_BLOCK_ORDER.length) {
-            return parsed;
+          if (!parsed.includes("visualizer")) {
+            const lastStepIdx = parsed.indexOf("lastStep");
+            if (lastStepIdx !== -1) {
+              parsed.splice(lastStepIdx + 1, 0, "visualizer");
+            } else {
+              parsed.push("visualizer");
+            }
+          }
+          const validKeys = new Set(DEFAULT_BLOCK_ORDER);
+          const filtered = parsed.filter((k) => validKeys.has(k));
+          for (const key of DEFAULT_BLOCK_ORDER) {
+            if (!filtered.includes(key)) {
+              filtered.push(key);
+            }
+          }
+          if (filtered.length === DEFAULT_BLOCK_ORDER.length) {
+            return filtered;
           }
         }
       }
@@ -247,6 +266,7 @@ export function App() {
       const next = await reset();
       setSnapshot(next);
       setLastStep(null);
+      setExecutionHistory([]);
       setRunInfo(null);
       setError(null);
       const initialProg =
@@ -302,6 +322,19 @@ export function App() {
     setSnapshot(result.snapshot);
     setLastStep(result.lastStep);
     setRunInfo(result.run ?? null);
+
+    if (result.lastStep) {
+      setExecutionHistory((prev) => {
+        const newItem: HistoryItem = {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          step: result.lastStep!,
+          snapshot: result.snapshot,
+          timestamp: Date.now(),
+        };
+        const next = [...prev, newItem];
+        return next.length > 30 ? next.slice(next.length - 30) : next;
+      });
+    }
 
     const targetPc = result.snapshot.pc;
     const progStart = followPc ? alignedRowStart(targetPc) : programSliceStart;
@@ -379,6 +412,7 @@ export function App() {
       setProgramSummary(result.summary);
       setSnapshot(result.snapshot);
       setLastStep(null);
+      setExecutionHistory([]);
       setRunInfo(null);
       setFollowPc(true);
       const progStart = alignedRowStart(result.snapshot.pc);
@@ -404,6 +438,7 @@ export function App() {
       setProgramSummary(result.summary);
       setSnapshot(result.snapshot);
       setLastStep(null);
+      setExecutionHistory([]);
       setRunInfo(null);
       setFollowPc(true);
       const start = result.summary.ranges[0]
@@ -603,6 +638,28 @@ export function App() {
             {...commonProps}
           >
             <LastStepTrace lastStep={lastStep} headless />
+          </DraggableCard>
+        );
+
+      case "visualizer":
+        return (
+          <DraggableCard
+            key={id}
+            id={id}
+            title="Recorrido Visual de Ejecución"
+            badge={
+              lastStep
+                ? `${lastStep.mnemonic} (PC: $${lastStep.pcBefore.toString(16).toUpperCase().padStart(4, "0")})`
+                : undefined
+            }
+            {...commonProps}
+          >
+            <VisualExecutionCard
+              lastStep={lastStep}
+              snapshot={snapshot}
+              history={executionHistory}
+              onClearHistory={() => setExecutionHistory([])}
+            />
           </DraggableCard>
         );
 
