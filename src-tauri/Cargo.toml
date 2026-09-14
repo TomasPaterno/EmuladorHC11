@@ -1,6 +1,6 @@
 [package]
 name = "emulador-hc11"
-version = "0.1.0"
+version = "0.1.1"
 description = "Emulador didáctico del Motorola M68HC11"
 authors = ["EmuladorHC11 contributors"]
 edition = "2024"
