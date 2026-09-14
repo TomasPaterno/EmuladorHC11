@@ -9,6 +9,7 @@ import { Splitter } from "./features/layout/Splitter";
 import { MemorySliceView } from "./features/memory/MemorySliceView";
 import { ProgramViewer } from "./features/program/ProgramViewer";
 import { updateProgramByte } from "./features/program/programSync";
+import { StackViewer } from "./features/stack/StackViewer";
 import { ExecutionToolbar } from "./features/toolbar/ExecutionToolbar";
 import { SettingsModal } from "./features/toolbar/SettingsModal";
 import {
@@ -39,6 +40,7 @@ const DEFAULT_BLOCK_ORDER = [
   "registers",
   "ccr",
   "lastStep",
+  "stack",
   "memProgram",
   "memData",
 ];
@@ -77,11 +79,18 @@ export function App() {
       const saved = localStorage.getItem("hc11_block_order");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (
-          Array.isArray(parsed) &&
-          parsed.length === DEFAULT_BLOCK_ORDER.length
-        ) {
-          return parsed;
+        if (Array.isArray(parsed)) {
+          if (!parsed.includes("stack")) {
+            const lastStepIdx = parsed.indexOf("lastStep");
+            if (lastStepIdx !== -1) {
+              parsed.splice(lastStepIdx + 1, 0, "stack");
+            } else {
+              parsed.push("stack");
+            }
+          }
+          if (parsed.length === DEFAULT_BLOCK_ORDER.length) {
+            return parsed;
+          }
         }
       }
     } catch {
@@ -172,6 +181,7 @@ export function App() {
 
   const [dataSliceStart, setDataSliceStart] = useState<number>(0x0000);
   const [dataView, setDataView] = useState<MemoryView | null>(null);
+  const [followSp, setFollowSp] = useState<boolean>(true);
   const [programByteFormat, setProgramByteFormat] = useState<ByteFormat>("hex");
   const [dataByteFormat, setDataByteFormat] = useState<ByteFormat>("hex");
 
@@ -242,9 +252,11 @@ export function App() {
       const initialProg =
         programSummary?.ranges?.[0]?.start ?? alignedRowStart(next.pc);
       setProgramSliceStart(initialProg);
+      const initialData = followSp ? alignedRowStart(next.sp) : dataSliceStart;
+      setDataSliceStart(initialData);
       await Promise.all([
         fetchProgramSlice(initialProg),
-        fetchDataSlice(dataSliceStart),
+        fetchDataSlice(initialData),
       ]);
     } catch (cause) {
       setError(formatError(parseIpcError(cause)));
@@ -293,11 +305,14 @@ export function App() {
 
     const targetPc = result.snapshot.pc;
     const progStart = followPc ? alignedRowStart(targetPc) : programSliceStart;
+    const targetSp = result.snapshot.sp;
+    const dataStart = followSp ? alignedRowStart(targetSp) : dataSliceStart;
 
-    void Promise.all([
-      fetchProgramSlice(progStart),
-      fetchDataSlice(dataSliceStart),
-    ]);
+    if (followSp) {
+      setDataSliceStart(dataStart);
+    }
+
+    void Promise.all([fetchProgramSlice(progStart), fetchDataSlice(dataStart)]);
   }
 
   async function handleWriteByte(address: number, value: number) {
@@ -314,6 +329,35 @@ export function App() {
         }
       }
 
+      await Promise.all([
+        fetchProgramSlice(programSliceStart),
+        fetchDataSlice(dataSliceStart),
+      ]);
+      setError(null);
+    } catch (cause) {
+      setError(formatError(parseIpcError(cause)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleWriteBytes(
+    writes: { address: number; value: number }[],
+    newContent?: string,
+  ) {
+    setBusy(true);
+    try {
+      let lastSnapshot = snapshot;
+      for (const w of writes) {
+        const res = await writeMemory(w.address, w.value);
+        lastSnapshot = res.snapshot;
+      }
+      if (lastSnapshot) {
+        setSnapshot(lastSnapshot);
+      }
+      if (newContent) {
+        setProgramContent(newContent);
+      }
       await Promise.all([
         fetchProgramSlice(programSliceStart),
         fetchDataSlice(dataSliceStart),
@@ -562,6 +606,39 @@ export function App() {
           </DraggableCard>
         );
 
+      case "stack":
+        return (
+          <DraggableCard
+            key={id}
+            id={id}
+            title="Inspector de Pila (Stack)"
+            badge={
+              snapshot
+                ? `SP: $${snapshot.sp.toString(16).toUpperCase().padStart(4, "0")}`
+                : undefined
+            }
+            {...commonProps}
+          >
+            <StackViewer
+              sp={snapshot?.sp ?? null}
+              pc={snapshot?.pc ?? null}
+              dataView={dataView}
+              lastStep={lastStep}
+              programSummary={programSummary}
+              followSp={followSp}
+              busy={busy}
+              onFollowSpChange={setFollowSp}
+              onJumpAddress={(addr) => {
+                setFollowSp(false);
+                void fetchDataSlice(addr);
+              }}
+              onWriteByte={(addr, val) => {
+                void handleWriteByte(addr, val);
+              }}
+            />
+          </DraggableCard>
+        );
+
       case "memProgram":
         return (
           <DraggableCard
@@ -621,6 +698,7 @@ export function App() {
               title="Memoria de Programa"
               view={programView}
               pc={snapshot?.pc ?? null}
+              sp={snapshot?.sp ?? null}
               writeSet={writeSet}
               format={programByteFormat}
               busy={busy}
@@ -643,12 +721,16 @@ export function App() {
             key={id}
             id={id}
             title="Memoria de Datos"
+            badge={followSp ? "Siguiendo SP" : undefined}
             {...commonProps}
             headerExtra={
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => void fetchDataSlice(0x0000)}
+                  onClick={() => {
+                    setFollowSp(false);
+                    void fetchDataSlice(0x0000);
+                  }}
                   className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
                   title="RAM interna ($0000)"
                 >
@@ -657,20 +739,28 @@ export function App() {
                 <button
                   type="button"
                   onClick={() => {
+                    setFollowSp(true);
                     const target =
                       snapshot?.sp !== undefined
                         ? snapshot.sp & 0xfff0
                         : 0x0040;
                     void fetchDataSlice(target);
                   }}
-                  className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
-                  title="Puntero de Pila (SP)"
+                  className={`rounded border px-2 py-0.5 text-xs font-semibold transition-colors cursor-pointer ${
+                    followSp
+                      ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700"
+                  }`}
+                  title="Puntero de Pila (SP) - Activa seguimiento automático de SP"
                 >
-                  Pila SP
+                  {followSp ? "● Pila SP" : "Pila SP"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => void fetchDataSlice(0x1000)}
+                  onClick={() => {
+                    setFollowSp(false);
+                    void fetchDataSlice(0x1000);
+                  }}
                   className="rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
                   title="Registros de control I/O ($1000)"
                 >
@@ -700,10 +790,12 @@ export function App() {
               title="Memoria de Datos"
               view={dataView}
               pc={snapshot?.pc ?? null}
+              sp={snapshot?.sp ?? null}
               writeSet={writeSet}
               format={dataByteFormat}
               busy={busy}
               onAddressChange={(addr) => {
+                setFollowSp(false);
                 void fetchDataSlice(addr);
               }}
               onWriteByte={(addr, val) => {
@@ -778,6 +870,7 @@ export function App() {
               void loadListingText(name, content);
             }}
             onWriteByte={handleWriteByte}
+            onWriteBytes={handleWriteBytes}
             onUpdateProgramContent={(newContent) =>
               setProgramContent(newContent)
             }

@@ -55,6 +55,7 @@ export function DualMemoryPanel({
           badge={followPc ? "Siguiendo PC" : "Fijada"}
           view={programView}
           pc={pc}
+          sp={sp}
           writeSet={writeSet}
           format={programFormat}
           busy={busy}
@@ -110,6 +111,7 @@ export function DualMemoryPanel({
           title="Porción 2: Memoria de Datos"
           view={dataView}
           pc={pc}
+          sp={sp}
           writeSet={writeSet}
           format={dataFormat}
           busy={busy}

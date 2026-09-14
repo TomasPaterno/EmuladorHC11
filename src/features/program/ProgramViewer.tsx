@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LoadSummary } from "../../ipc/emulator";
 import {
   parseCodeLine,
-  updateProgramByte,
-  updateProgramLineText,
+  updateProgramLineBytes,
   updateProgramLineAddress,
 } from "./programSync";
+import { disassembleHexStrings } from "./disassembler";
 
 export const SAMPLE_PROGRAM_2000 = `1 0000
 2 2000
@@ -54,12 +54,16 @@ interface ProgramViewerProps {
   onOpenListing: () => void;
   onLoadSample: (name: string, content: string) => void;
   onWriteByte?: (address: number, value: number) => Promise<void>;
+  onWriteBytes?: (
+    writes: { address: number; value: number }[],
+    newContent?: string,
+  ) => Promise<void>;
   onUpdateProgramContent?: (newContent: string) => void;
 }
 
 interface EditingCell {
   lineIndex: number;
-  field: "byte" | "instruction" | "address";
+  field: "byte" | "address";
   byteIndex?: number;
   initialValue: string;
 }
@@ -73,6 +77,7 @@ export function ProgramViewer({
   onOpenListing,
   onLoadSample,
   onWriteByte,
+  onWriteBytes,
   onUpdateProgramContent,
 }: ProgramViewerProps) {
   const [autoScroll, setAutoScroll] = useState(true);
@@ -151,22 +156,33 @@ export function ProgramViewer({
         typeof byteIndex === "number" &&
         targetLine.address !== null
       ) {
-        const targetAddr = targetLine.address + byteIndex;
         const hexClean = trimmed.replace(/^(\$|0x)/i, "");
         let parsedVal = parseInt(hexClean, 16);
         if (Number.isNaN(parsedVal)) {
           parsedVal = parseInt(trimmed, 10);
         }
         if (!Number.isNaN(parsedVal) && parsedVal >= 0 && parsedVal <= 255) {
-          await onWriteByte?.(targetAddr, parsedVal);
-          const updated = updateProgramByte(fileContent, targetAddr, parsedVal);
-          if (updated) {
-            onUpdateProgramContent?.(updated);
+          const updatedHex = (parsedVal & 0xff)
+            .toString(16)
+            .toUpperCase()
+            .padStart(2, "0");
+          const currentBytes = [...targetLine.bytes];
+          currentBytes[byteIndex] = updatedHex;
+          const res = updateProgramLineBytes(
+            fileContent,
+            lineIndex,
+            currentBytes,
+          );
+          if (res) {
+            if (onWriteBytes) {
+              await onWriteBytes(res.writes, res.updatedContent);
+            } else {
+              const targetAddr = targetLine.address + byteIndex;
+              await onWriteByte?.(targetAddr, parsedVal);
+              onUpdateProgramContent?.(res.updatedContent);
+            }
           }
         }
-      } else if (field === "instruction") {
-        const updated = updateProgramLineText(fileContent, lineIndex, trimmed);
-        onUpdateProgramContent?.(updated);
       } else if (field === "address" && targetLine.address !== null) {
         const hexClean = trimmed.replace(/^(\$|0x)/i, "");
         const parsedAddr = parseInt(hexClean, 16);
@@ -290,15 +306,15 @@ export function ProgramViewer({
                 </th>
                 <th
                   scope="col"
-                  className="w-32 px-2.5 py-1.5 text-left font-bold"
+                  className="w-48 min-w-[190px] px-2.5 py-1.5 text-left font-bold whitespace-nowrap"
                   title="Doble clic en un byte para editar"
                 >
                   Bytes
                 </th>
                 <th
                   scope="col"
-                  className="px-2.5 py-1.5 text-left font-bold"
-                  title="Doble clic para editar instrucción"
+                  className="px-2.5 py-1.5 text-left font-bold whitespace-nowrap"
+                  title="Instrucción en ensamblador Motorola 68HC11 (modo informativo)"
                 >
                   Instrucción
                 </th>
@@ -309,14 +325,18 @@ export function ProgramViewer({
                 const isActive = idx === activeLineIndex;
                 const isEditingAddr =
                   editing?.lineIndex === idx && editing.field === "address";
-                const isEditingInst =
-                  editing?.lineIndex === idx && editing.field === "instruction";
+
+                const firstByte = line.bytes[0]?.toUpperCase();
+                const opcodeLen =
+                  firstByte === "18" || firstByte === "1A" || firstByte === "CD"
+                    ? 2
+                    : 1;
 
                 return (
                   <tr
                     key={idx}
                     ref={isActive ? activeLineRef : null}
-                    className={`transition-colors border-b border-slate-900/60 ${
+                    className={`transition-colors border-b border-slate-900/60 whitespace-nowrap ${
                       isActive
                         ? "bg-amber-400/20 text-amber-100 font-bold border-y border-amber-500/50 shadow-inner"
                         : "hover:bg-slate-900/40 text-slate-200"
@@ -381,10 +401,10 @@ export function ProgramViewer({
                           ? "Doble clic en un byte para editarlo"
                           : undefined
                       }
-                      className="px-2.5 py-1.5 font-mono text-slate-200 text-sm sm:text-base font-semibold"
+                      className="w-48 min-w-[190px] px-2.5 py-1.5 font-mono text-slate-200 text-sm sm:text-base font-semibold whitespace-nowrap"
                     >
                       {line.bytes.length > 0 ? (
-                        <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-nowrap">
                           {line.bytes.map((byteHex, bIdx) => {
                             const isThisByteEditing =
                               editing?.lineIndex === idx &&
@@ -403,7 +423,7 @@ export function ProgramViewer({
                                     if (e.key === "Escape") setEditing(null);
                                   }}
                                   onBlur={() => void handleCommit()}
-                                  className="w-10 rounded bg-slate-800 border border-amber-400 px-1 py-0.5 text-xs sm:text-sm font-mono text-amber-300 text-center font-bold focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                  className="w-10 rounded bg-slate-950 border border-amber-400 px-1 py-0.5 text-xs sm:text-sm font-mono text-amber-300 text-center font-bold focus:outline-none focus:ring-1 focus:ring-amber-400"
                                 />
                               );
                             }
@@ -412,6 +432,9 @@ export function ProgramViewer({
                               line.address !== null
                                 ? line.address + bIdx
                                 : null;
+                            const isOpcode = bIdx < opcodeLen;
+                            const paramNum = bIdx - opcodeLen + 1;
+
                             return (
                               <span
                                 key={bIdx}
@@ -428,11 +451,15 @@ export function ProgramViewer({
                                   }
                                 }}
                                 title={
-                                  byteAddr !== null
-                                    ? `Doble clic para editar byte en $${hexWord(byteAddr)}`
-                                    : "Doble clic para editar byte"
+                                  isOpcode
+                                    ? `Opcode: $${byteHex}${byteAddr !== null ? ` en $${hexWord(byteAddr)}` : ""} (Doble clic para editar)`
+                                    : `Parámetro #${paramNum}: $${byteHex}${byteAddr !== null ? ` en $${hexWord(byteAddr)}` : ""} (Doble clic para editar)`
                                 }
-                                className="inline-block px-1 py-0.5 rounded cursor-pointer hover:bg-amber-400/25 hover:text-amber-200 border border-transparent hover:border-amber-400/40 transition-colors"
+                                className={`inline-block px-1.5 py-0.5 rounded cursor-pointer border font-bold transition-all select-none text-xs sm:text-sm bg-transparent ${
+                                  isOpcode
+                                    ? "border-amber-400 text-amber-400 hover:bg-amber-400/10"
+                                    : "border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
+                                }`}
                               >
                                 {byteHex}
                               </span>
@@ -444,37 +471,64 @@ export function ProgramViewer({
                       )}
                     </td>
 
-                    {/* Instruction / text */}
+                    {/* Instruction / text (informativo / desensamblado automático) */}
                     <td
-                      onDoubleClick={() => {
-                        const textToEdit =
-                          line.address !== null ? line.rest : line.raw;
-                        setEditing({
-                          lineIndex: idx,
-                          field: "instruction",
-                          initialValue: textToEdit,
-                        });
-                        setEditValue(textToEdit);
-                      }}
-                      title="Doble clic para editar instrucción o comentario"
-                      className="px-2.5 py-1.5 text-slate-100 text-sm sm:text-base font-medium cursor-pointer hover:bg-slate-800/40 rounded transition-colors"
+                      className="px-2.5 py-1.5 text-slate-100 text-sm sm:text-base font-medium select-text whitespace-nowrap"
+                      title={
+                        line.bytes.length > 0
+                          ? "Instrucción en ensamblador traducida a partir de los bytes (modo informativo)"
+                          : undefined
+                      }
                     >
-                      {isEditingInst ? (
-                        <input
-                          ref={editInputRef}
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") void handleCommit();
-                            if (e.key === "Escape") setEditing(null);
-                          }}
-                          onBlur={() => void handleCommit()}
-                          className="w-full rounded bg-slate-800 border border-amber-400 px-1.5 py-0.5 text-xs sm:text-sm font-mono text-amber-300 font-medium focus:outline-none focus:ring-1 focus:ring-amber-400"
-                        />
+                      {line.bytes.length > 0 ? (
+                        (() => {
+                          const disasm = disassembleHexStrings(
+                            line.bytes,
+                            line.address,
+                          );
+                          return (
+                            <div className="flex items-center flex-nowrap gap-x-2 whitespace-nowrap">
+                              <span
+                                className="font-mono font-bold text-amber-300 text-sm sm:text-base shrink-0"
+                                title={`Nemónico: ${disasm.mnemonic} · Modo: ${disasm.mode}`}
+                              >
+                                {disasm.mnemonic}
+                              </span>
+                              {disasm.operands && (
+                                <span
+                                  className="font-mono font-semibold text-cyan-300 text-sm sm:text-base shrink-0"
+                                  title={`Operandos / Parámetros: ${disasm.operands}`}
+                                >
+                                  {disasm.operands}
+                                </span>
+                              )}
+                              {!disasm.isComplete && (
+                                <span
+                                  className="rounded bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.2 text-[10px] font-sans font-medium text-amber-300 italic shrink-0"
+                                  title={`La instrucción espera ${disasm.expectedParamBytes} parámetro(s) pero tiene ${disasm.actualParamBytes}`}
+                                >
+                                  incompleto ({disasm.actualParamBytes}/
+                                  {disasm.expectedParamBytes} parám)
+                                </span>
+                              )}
+                              {line.rest &&
+                                (line.rest.trim().startsWith(";") ||
+                                  line.rest.trim().startsWith("*")) && (
+                                  <span className="text-slate-400 font-mono text-xs italic ml-1.5 opacity-80 shrink-0">
+                                    {line.rest.trim()}
+                                  </span>
+                                )}
+                            </div>
+                          );
+                        })()
                       ) : line.address !== null ? (
-                        line.rest
+                        <span className="text-slate-500 font-mono text-xs">
+                          {line.rest || "—"}
+                        </span>
                       ) : (
-                        line.raw
+                        <span className="text-slate-400 font-mono text-xs">
+                          {line.raw}
+                        </span>
                       )}
                     </td>
                   </tr>

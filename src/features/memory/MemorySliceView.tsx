@@ -35,6 +35,7 @@ interface MemorySliceViewProps {
   badge?: string;
   view: MemoryView | null;
   pc: number | null;
+  sp?: number | null;
   writeSet: Set<number>;
   format: ByteFormat;
   busy?: boolean;
@@ -50,6 +51,7 @@ export function MemorySliceView({
   badge,
   view,
   pc,
+  sp = null,
   writeSet,
   format,
   busy = false,
@@ -348,6 +350,7 @@ export function MemorySliceView({
                     const addr = (view.start + idx) & 0xffff;
                     const val = view.bytes[idx];
                     const isPc = pc === addr;
+                    const isSp = sp === addr;
                     const isWrite = writeSet.has(addr);
                     const isEditing = edit?.index === idx;
 
@@ -377,11 +380,15 @@ export function MemorySliceView({
                             type="button"
                             onDoubleClick={() => beginEdit(idx)}
                             className={`w-full rounded-md border px-1 py-1 text-center transition-all cursor-pointer shadow-xs ${
-                              isPc
-                                ? "border-amber-400 bg-amber-400 font-black text-slate-950 shadow-sm"
-                                : isWrite
-                                  ? "border-cyan-400 bg-cyan-600 font-black text-white ring-1 ring-cyan-400"
-                                  : "border-slate-800 bg-slate-950/80 text-slate-100 hover:border-amber-400/60 hover:bg-slate-800/80 font-bold"
+                              isPc && isSp
+                                ? "border-amber-400 bg-amber-400 font-black text-slate-950 ring-2 ring-purple-400 shadow-md"
+                                : isPc
+                                  ? "border-amber-400 bg-amber-400 font-black text-slate-950 shadow-sm"
+                                  : isSp
+                                    ? "border-purple-400 bg-purple-600 font-black text-white ring-2 ring-purple-300/80 shadow-sm"
+                                    : isWrite
+                                      ? "border-cyan-400 bg-cyan-600 font-black text-white ring-1 ring-cyan-400"
+                                      : "border-slate-800 bg-slate-950/80 text-slate-100 hover:border-amber-400/60 hover:bg-slate-800/80 font-bold"
                             } ${
                               format === "bin"
                                 ? "min-w-[84px] text-xs sm:text-sm tracking-tight"
@@ -392,9 +399,9 @@ export function MemorySliceView({
                             title={`$${hexWord(addr)}: ${formatDisplayByte(
                               val,
                               format,
-                            )} (dec: ${val})${isPc ? " (PC)" : ""}${
-                              isWrite ? " (Escrito)" : ""
-                            } - Doble clic para editar`}
+                            )} (dec: ${val})${isPc ? " [PC]" : ""}${
+                              isSp ? " [SP - Puntero de Pila]" : ""
+                            }${isWrite ? " [Escrito]" : ""} - Doble clic para editar`}
                           >
                             {format === "bin" ? (
                               <span className="inline-flex items-center justify-center gap-1 font-mono tracking-wider font-bold">

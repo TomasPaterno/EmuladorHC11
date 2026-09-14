@@ -422,6 +422,182 @@ mod tests {
     }
 
     #[test]
+    fn nested_subroutines_jsr_bsr_rts_unwinding() {
+        let mut image = [0x01; 32];
+        // 0x0000: JSR 0x0010 (3 bytes)
+        image[0] = 0xBD;
+        image[1] = 0x00;
+        image[2] = 0x10;
+        // 0x0003: NOP (1 byte)
+        image[3] = 0x01;
+
+        // Subroutine 1 at 0x0010:
+        // 0x0010: BSR +0x04 -> 0x0016 (2 bytes)
+        image[0x10] = 0x8D;
+        image[0x11] = 0x04;
+        // 0x0012: RTS (1 byte)
+        image[0x12] = 0x39;
+
+        // Subroutine 2 at 0x0016:
+        // 0x0016: INCA (1 byte)
+        image[0x16] = 0x4C;
+        // 0x0017: RTS (1 byte)
+        image[0x17] = 0x39;
+
+        let mut machine = ready(0x0000, &image);
+        machine.cpu_mut().sp = 0x00FF;
+        machine.cpu_mut().a = 10;
+
+        // Step 1: JSR 0x0010
+        machine.step().expect("JSR");
+        assert_eq!(machine.cpu().pc, 0x0010);
+        assert_eq!(machine.cpu().sp, 0x00FD);
+        assert_eq!(machine.bus().read_byte(0x00FF), 0x03); // PCL
+        assert_eq!(machine.bus().read_byte(0x00FE), 0x00); // PCH
+
+        // Step 2: BSR +4 (target 0x0016)
+        machine.step().expect("BSR");
+        assert_eq!(machine.cpu().pc, 0x0016);
+        assert_eq!(machine.cpu().sp, 0x00FB);
+        assert_eq!(machine.bus().read_byte(0x00FD), 0x12); // PCL
+        assert_eq!(machine.bus().read_byte(0x00FC), 0x00); // PCH
+
+        // Step 3: INCA in sub2
+        machine.step().expect("INCA");
+        assert_eq!(machine.cpu().a, 11);
+        assert_eq!(machine.cpu().pc, 0x0017);
+
+        // Step 4: RTS in sub2 -> returns to 0x0012 in sub1
+        machine.step().expect("RTS from sub2");
+        assert_eq!(machine.cpu().pc, 0x0012);
+        assert_eq!(machine.cpu().sp, 0x00FD);
+
+        // Step 5: RTS in sub1 -> returns to 0x0003 in main
+        machine.step().expect("RTS from sub1");
+        assert_eq!(machine.cpu().pc, 0x0003);
+        assert_eq!(machine.cpu().sp, 0x00FF);
+
+        // Step 6: NOP in main
+        machine.step().expect("NOP");
+        assert_eq!(machine.cpu().pc, 0x0004);
+        assert_eq!(machine.cpu().a, 11);
+    }
+
+    #[test]
+    fn stack_parameter_passing_tsx_offset() {
+        let mut image = [0x01; 32];
+        // 0x0000: PSHA (1 byte)
+        image[0] = 0x36;
+        // 0x0001: PSHB (1 byte)
+        image[1] = 0x37;
+        // 0x0002: JSR 0x0010 (3 bytes)
+        image[2] = 0xBD;
+        image[3] = 0x00;
+        image[4] = 0x10;
+        // 0x0005: INS (1 byte)
+        image[5] = 0x31;
+        // 0x0006: INS (1 byte)
+        image[6] = 0x31;
+
+        // Callee at 0x0010:
+        // 0x0010: TSX (1 byte) -> X = SP + 1 (TOS)
+        image[0x10] = 0x30;
+        // 0x0011: LDAA 2,X (2 bytes) -> reads parameter B (at TOS+2)
+        image[0x11] = 0xA6;
+        image[0x12] = 0x02;
+        // 0x0013: LDAB 3,X (2 bytes) -> reads parameter A (at TOS+3)
+        image[0x13] = 0xE6;
+        image[0x14] = 0x03;
+        // 0x0015: ABA (1 byte) -> A = A + B
+        image[0x15] = 0x1B;
+        // 0x0016: RTS (1 byte)
+        image[0x16] = 0x39;
+
+        let mut machine = ready(0x0000, &image);
+        machine.cpu_mut().sp = 0x00FF;
+        machine.cpu_mut().a = 30;
+        machine.cpu_mut().b = 12;
+
+        machine.step().expect("PSHA");
+        assert_eq!(machine.cpu().sp, 0x00FE);
+        assert_eq!(machine.bus().read_byte(0x00FF), 30);
+
+        machine.step().expect("PSHB");
+        assert_eq!(machine.cpu().sp, 0x00FD);
+        assert_eq!(machine.bus().read_byte(0x00FE), 12);
+
+        machine.step().expect("JSR");
+        assert_eq!(machine.cpu().pc, 0x0010);
+        assert_eq!(machine.cpu().sp, 0x00FB);
+
+        machine.step().expect("TSX");
+        assert_eq!(machine.cpu().x, 0x00FC); // SP+1
+
+        machine.step().expect("LDAA 2,X");
+        assert_eq!(machine.cpu().a, 12); // param B
+
+        machine.step().expect("LDAB 3,X");
+        assert_eq!(machine.cpu().b, 30); // param A
+
+        machine.step().expect("ABA");
+        assert_eq!(machine.cpu().a, 42);
+
+        machine.step().expect("RTS");
+        assert_eq!(machine.cpu().pc, 0x0005);
+        assert_eq!(machine.cpu().sp, 0x00FD);
+
+        machine.step().expect("INS");
+        assert_eq!(machine.cpu().sp, 0x00FE);
+
+        machine.step().expect("INS");
+        assert_eq!(machine.cpu().sp, 0x00FF);
+        assert_eq!(machine.cpu().a, 42);
+    }
+
+    #[test]
+    fn stack_16bit_symmetry_pshx_pshy_pul() {
+        // 0x0000: PSHX (1b), PSHY (2b), PULX (1b), PULY (2b)
+        let image = [0x3C, 0x18, 0x3C, 0x38, 0x18, 0x38];
+        let mut machine = ready(0x0000, &image);
+        machine.cpu_mut().sp = 0x00FF;
+        machine.cpu_mut().x = 0x1234;
+        machine.cpu_mut().y = 0x5678;
+
+        machine.step().expect("PSHX");
+        assert_eq!(machine.cpu().sp, 0x00FD);
+        assert_eq!(machine.bus().read_byte(0x00FF), 0x34);
+        assert_eq!(machine.bus().read_byte(0x00FE), 0x12);
+
+        machine.step().expect("PSHY");
+        assert_eq!(machine.cpu().sp, 0x00FB);
+        assert_eq!(machine.bus().read_byte(0x00FD), 0x78);
+        assert_eq!(machine.bus().read_byte(0x00FC), 0x56);
+
+        // PULX pulls top of stack (which was Y: 0x5678)
+        machine.step().expect("PULX");
+        assert_eq!(machine.cpu().x, 0x5678);
+        assert_eq!(machine.cpu().sp, 0x00FD);
+
+        // PULY pulls next on stack (which was original X: 0x1234)
+        machine.step().expect("PULY");
+        assert_eq!(machine.cpu().y, 0x1234);
+        assert_eq!(machine.cpu().sp, 0x00FF);
+    }
+
+    #[test]
+    fn stack_pointer_wrapping_des_ins() {
+        let image = [0x34, 0x31]; // DES, INS
+        let mut machine = ready(0x0000, &image);
+        machine.cpu_mut().sp = 0x0000;
+
+        machine.step().expect("DES wrap");
+        assert_eq!(machine.cpu().sp, 0xFFFF);
+
+        machine.step().expect("INS wrap");
+        assert_eq!(machine.cpu().sp, 0x0000);
+    }
+
+    #[test]
     fn every_implemented_row_runs_and_accounts_cycles() {
         let mut implemented = 0;
         for opcode in 0u8..=255 {

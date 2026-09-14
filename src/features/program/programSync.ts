@@ -235,8 +235,13 @@ export function updateProgramLineBytes(
   if (validHexBytes.length === 0) return null;
 
   if (parsed.isS19) {
-    // Para S19, actualizar los bytes y recalcular
-    const prefix = targetLine.substring(0, 8);
+    // Para S19, actualizar los bytes, el contador y recalcular checksum
+    const addrHex = targetLine.substring(4, 8);
+    const newCount = (validHexBytes.length + 3)
+      .toString(16)
+      .toUpperCase()
+      .padStart(2, "0");
+    const prefix = `S1${newCount}${addrHex}`;
     const updatedLine = prefix + validHexBytes.join("");
     lines[lineIndex] = recalculateS1Checksum(updatedLine);
   } else {
@@ -260,6 +265,88 @@ export function updateProgramLineBytes(
     updatedContent: lines.join("\n"),
     writes,
   };
+}
+
+/**
+ * Agrega un byte de parámetro a una línea de instrucción, respetando el límite máximo de 3 parámetros.
+ */
+export function addProgramLineParam(
+  content: string,
+  lineIndex: number,
+  defaultValue: number = 0x00,
+  maxParams: number = 3,
+): {
+  updatedContent: string;
+  writes: { address: number; value: number }[];
+  newByteIndex: number;
+} | null {
+  const lines = content.split(/\r?\n/);
+  if (lineIndex < 0 || lineIndex >= lines.length) return null;
+
+  const targetLine = lines[lineIndex];
+  const parsed = parseCodeLine(targetLine, lineIndex);
+  if (parsed.address === null) return null;
+
+  const firstByte = parsed.bytes[0]?.toUpperCase();
+  const opcodeLen =
+    firstByte === "18" || firstByte === "1A" || firstByte === "CD" ? 2 : 1;
+  const currentParams = Math.max(0, parsed.bytes.length - opcodeLen);
+
+  if (currentParams >= maxParams) {
+    return null;
+  }
+
+  const cleanHex = (defaultValue & 0xff)
+    .toString(16)
+    .toUpperCase()
+    .padStart(2, "0");
+  const newBytes = [...parsed.bytes, cleanHex];
+
+  const result = updateProgramLineBytes(content, lineIndex, newBytes);
+  if (!result) return null;
+
+  return {
+    updatedContent: result.updatedContent,
+    writes: result.writes,
+    newByteIndex: newBytes.length - 1,
+  };
+}
+
+/**
+ * Remueve un byte de parámetro de una línea de instrucción (sin permitir remover el opcode).
+ */
+export function removeProgramLineParam(
+  content: string,
+  lineIndex: number,
+  byteIndex: number,
+): {
+  updatedContent: string;
+  writes: { address: number; value: number }[];
+} | null {
+  const lines = content.split(/\r?\n/);
+  if (lineIndex < 0 || lineIndex >= lines.length) return null;
+
+  const targetLine = lines[lineIndex];
+  const parsed = parseCodeLine(targetLine, lineIndex);
+  if (parsed.address === null) return null;
+
+  const firstByte = parsed.bytes[0]?.toUpperCase();
+  const opcodeLen =
+    firstByte === "18" || firstByte === "1A" || firstByte === "CD" ? 2 : 1;
+
+  if (byteIndex < opcodeLen) {
+    // No se puede remover el opcode principal
+    return null;
+  }
+
+  if (byteIndex >= parsed.bytes.length) {
+    return null;
+  }
+
+  const newBytes = parsed.bytes.filter((_, idx) => idx !== byteIndex);
+  if (newBytes.length === 0) return null;
+
+  return updateProgramLineBytes(content, lineIndex, newBytes);
 }
 
 /**
