@@ -103,7 +103,7 @@ jobs:
             - **macOS**: `Emulador-HC11_..._universal.dmg` (compatible con Apple Silicon e Intel)
             - **Linux**: `Emulador-HC11_..._amd64.AppImage` (portable universal) o `.deb` (Debian/Ubuntu)
 
-            Para instrucciones detalladas sobre cómo abrir y configurar la aplicación paso a paso (incluyendo cómo saltar las advertencias de seguridad sin costo en Windows y macOS), consulte la [Guía de Instalación](https://github.com/${{ github.repository }}/blob/main/docs/instalacion.md).
+            Para instrucciones detalladas sobre el proceso de instalación y ejecución en cada sistema operativo, consulte la [Guía de Instalación](https://github.com/${{ github.repository }}/blob/main/docs/instalacion.md).
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

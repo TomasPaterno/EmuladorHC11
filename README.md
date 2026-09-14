@@ -14,7 +14,7 @@ están implementados.
 Para utilizar el emulador directamente sin necesidad de compilar código ni configurar herramientas de desarrollo:
 
 - 🚀 **[Descargas en GitHub Releases](https://github.com/TomasPaterno/EmuladorHC11/releases)**: Instaladores `.exe` (Windows), `.dmg` (macOS) y `.AppImage` / `.deb` (Linux).
-- 📖 **[Guía de Instalación Paso a Paso](docs/instalacion.md)**: Instrucciones detalladas para instalar y ejecutar en cada sistema operativo (incluye cómo omitir advertencias iniciales en Windows SmartScreen y Apple Gatekeeper).
+- 📖 **[Guía de Instalación](docs/instalacion.md)**: Instrucciones detalladas para instalar y ejecutar en cada sistema operativo (Windows, macOS y Linux).
 
 ## Documentación
 

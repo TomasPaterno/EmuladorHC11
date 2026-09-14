@@ -19,6 +19,7 @@ vite.config.d.ts
 docs/hardware/work
 docs/hardware/derived
 src-tauri/target
+scratch_*.txt
 
 # Editor directories and files
 .vscode/*

@@ -19,9 +19,6 @@ Al final de la última versión publicada, despliega la sección **Assets** para
 | **Linux** (Todas las distros)      | `Emulador-HC11_<versión>_amd64.AppImage` | Ejecutable portable universal (no requiere instalación).     |
 | **Linux** (Ubuntu / Debian / Mint) | `Emulador-HC11_<versión>_amd64.deb`      | Paquete instalador nativo para distribuciones Debian/Ubuntu. |
 
-> [!NOTE]
-> **El paquete está completamente optimizado:** Los instaladores contienen únicamente el motor de emulación y la interfaz gráfica. Los archivos de trabajo, transcripciones OCR y los manuales de referencia en PDF (~38 MB) se mantienen en el repositorio de desarrollo y no ocupan espacio en tu computadora.
-
 ---
 
 ## 2. Instalación en Windows
@@ -31,20 +28,20 @@ Al final de la última versión publicada, despliega la sección **Assets** para
 1. Descarga el archivo `Emulador-HC11_<versión>_x64-setup.exe`.
 2. Haz doble clic en el archivo descargado para iniciar la instalación.
 
-### Paso 2: Advertencia de Windows SmartScreen (Primer uso)
+### Paso 2: Aviso de seguridad en el primer uso (Windows SmartScreen)
 
-Al ser un proyecto de software libre y código abierto sin fines de lucro, la aplicación no utiliza un certificado comercial de pago de Microsoft. Por esta razón, Windows mostrará una ventana azul preventiva diciendo:
+Dado que la aplicación es de código abierto y no cuenta con un certificado comercial corporativo de firma de código (EV Code Signing), Windows Defender SmartScreen puede mostrar un diálogo informativo en la primera ejecución:
 
 > _"Windows protegió su PC: SmartScreen de Microsoft Defender impidió el inicio de una aplicación no reconocida."_
 
-**Para continuar (solo se realiza una vez):**
+**Para continuar con la instalación:**
 
-1. Haz clic en el enlace subrayado **"Más información"** (debajo del texto de advertencia).
-2. Aparecerá el botón **"Ejecutar de todas formas"** en la esquina inferior. Haz clic en él.
+1. Haz clic en el enlace **"Más información"**.
+2. Haz clic en el botón **"Ejecutar de todas formas"**.
 
 ### Paso 3: Asistente de instalación
 
-Sigue las indicaciones del instalador (haz clic en _Siguiente_, _Instalar_ y _Finalizar_). El instalador creará un acceso directo en el **Menú Inicio** y en el **Escritorio**.
+Sigue las indicaciones del asistente de instalación. La aplicación creará los accesos directos correspondientes en el menú de inicio y en el escritorio.
 
 ---
 
@@ -56,22 +53,20 @@ Sigue las indicaciones del instalador (haz clic en _Siguiente_, _Instalar_ y _Fi
 2. Haz doble clic en el archivo `.dmg` descargado para abrir la ventana de instalación.
 3. Arrastra el ícono de **Emulador HC11** hacia la carpeta **Aplicaciones**.
 
-### Paso 2: Permiso de seguridad de Apple Gatekeeper (Primer uso)
+### Paso 2: Permiso de ejecución inicial (Apple Gatekeeper)
 
-macOS bloquea de forma preventiva cualquier aplicación descargada de internet que no provenga de la Mac App Store o de desarrolladores con suscripción comercial de Apple. Al abrirla por primera vez, verás un mensaje como:
+Al no distribuirse mediante la Mac App Store, macOS Gatekeeper puede solicitar confirmación al ejecutar la aplicación por primera vez:
 
 > _"No se puede abrir 'Emulador HC11' porque el desarrollador no ha sido verificado."_
 
-Puedes habilitarla de forma muy sencilla con cualquiera de estos dos métodos:
+Para autorizar la ejecución:
 
 #### Método A: Desde Ajustes del Sistema (Recomendado)
 
-1. Abre **Ajustes del Sistema** (o _Preferencias del Sistema_ en versiones anteriores).
-2. Ve a la sección **Privacidad y seguridad**.
-3. Desplázate hacia abajo hasta la sección **Seguridad**.
-4. Verás una notificación que dice: _"Se bloqueó el uso de 'Emulador HC11'..."_.
-5. Haz clic en el botón **"Abrir de todos modos"**.
-6. Ingresa tu contraseña o huella Touch ID para confirmar. A partir de ese momento la app abrirá siempre con normalidad.
+1. Abre **Ajustes del Sistema** (o _Preferencias del Sistema_).
+2. Dirígete a **Privacidad y seguridad** y desplázate hasta la sección **Seguridad**.
+3. En la notificación que indica que se bloqueó el uso de la aplicación, haz clic en **"Abrir de todos modos"**.
+4. Confirma con tus credenciales del sistema. La autorización queda registrada permanentemente.
 
 #### Método B: Por Terminal (Comando rápido)
 
