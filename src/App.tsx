@@ -813,6 +813,18 @@ export function App() {
         </div>
       </main>
 
+      {/* Bottom Status Bar / Footer */}
+      <footer className="flex items-center justify-between border-t border-slate-800 bg-slate-950/80 px-4 py-1 text-xs text-slate-400 select-none">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="text-[11px] text-slate-400">Motorola 68HC11</span>
+        </div>
+        <div className="text-[11px] text-slate-400">
+          Desarrollado por{" "}
+          <span className="font-medium text-slate-300">Tomás Paternó</span>
+        </div>
+      </footer>
+
       {/* Hidden File Inputs */}
       <input
         ref={s19InputRef}

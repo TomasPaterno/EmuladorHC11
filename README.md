@@ -42,3 +42,7 @@ revisión, sección, página impresa y página PDF. Consulte la
 [política de fuentes](docs/decisions/0004-source-policy.md).
 
 La Fase 1 está cerrada para MC68HC11E9. Consulte [docs/roadmap.md](docs/roadmap.md).
+
+## Autor
+
+Desarrollado por **Tomás Paternó**.

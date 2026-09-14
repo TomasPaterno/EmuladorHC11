@@ -448,7 +448,11 @@ export function SettingsModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end border-t border-slate-800 px-6 py-3.5 bg-slate-950/60">
+        <div className="flex items-center justify-between border-t border-slate-800 px-6 py-3.5 bg-slate-950/60">
+          <div className="text-xs text-slate-400">
+            Desarrollado por{" "}
+            <span className="font-semibold text-slate-200">Tomás Paternó</span>
+          </div>
           <button
             type="button"
             onClick={onClose}
