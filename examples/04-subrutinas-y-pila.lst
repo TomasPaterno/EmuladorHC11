@@ -1,0 +1,42 @@
+; ==========================================================
+; EJEMPLO 4: Subrutinas y manipulación de Pila (Stack)
+; Dificultad: Avanzada
+; Conceptos: Inicialización LDS, llamadas JSR, retorno RTS, preservación PSHB/PULB, Pila
+;
+; 1. Inicializa el Stack Pointer (SP) en $00FF (tope de la RAM interna).
+;    ¡Obligatorio en 68HC11 antes de usar subrutinas o apilar datos!
+; 2. Calcula |Num1| + |Num2| llamando a una subrutina de valor absoluto.
+; 3. JSR apila la dirección de retorno en SP ($00FF-$00FE) y salta a la subrutina.
+; 4. RTS desapila la dirección de retorno de SP y regresa fielmente al llamador.
+; Num1 = -15 ($F1), Num2 = +25 ($19) -> Resultado esperado: 40 ($28) en $0032.
+; ==========================================================
+1 0000
+2 2000
+; --- 1. Inicialización obligatoria de Pila ---
+3 2000 8E 00 FF ; LDS #$00FF    - Inicializa SP en el tope de RAM interna ($00FF)
+; --- 2. Inicialización de variables ---
+4 2003 86 F1    ; LDAA #$F1     - Num1 = -15 (en complemento a 2)
+5 2005 97 30    ; STAA $30      - Almacena en $0030
+6 2007 86 19    ; LDAA #$19     - Num2 = +25
+7 2009 97 31    ; STAA $31      - Almacena en $0031
+; --- 3. Primera llamada a subrutina ---
+8 200B 96 30    ; LDAA $30      - Carga Num1 (-15) en acumulador A
+9 200D BD 20 1C ; JSR $201C     - Llama a ABS_VAL (apila PC retorno $2010 en SP)
+10 2010 16       ; TAB           - Guarda |Num1| (+15) en acumulador B
+; --- 4. Segunda llamada a subrutina ---
+11 2011 96 31   ; LDAA $31      - Carga Num2 (+25) en acumulador A
+12 2013 BD 20 1C ; JSR $201C    - Llama a ABS_VAL (apila PC retorno $2016 en SP)
+13 2016 1B      ; ABA           - A = A + B (15 + 25 = 40 = $28)
+14 2017 97 32   ; STAA $32      - Guarda resultado en $0032
+15 2019 7E 20 19 ; JMP $2019    - Bucle infinito de detención
+; ==========================================================
+; SUBRUTINA: ABS_VAL ($201C)
+; Entrada: Acumulador A (número con signo)
+; Salida:  Acumulador A (valor absoluto |A|)
+; Modifica: A y banderas CCR. Preserva B en la pila.
+; ==========================================================
+16 201C 37      ; PSHB          - Preserva B en la pila (SP se decrementa a $00FB)
+17 201D 2A 01   ; BPL $2020     - Si es positivo (N=0), salta el NEGA
+18 201F 40      ; NEGA          - Si es negativo, aplica complemento a 2
+19 2020 33      ; PULB          - Restaura B original desde la pila (SP vuelve)
+20 2021 39      ; RTS           - Retorna desapilando dirección de retorno ($2010 o $2016)

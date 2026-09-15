@@ -1,0 +1,32 @@
+; ==========================================================
+; EJEMPLO 6: Manipulación atómica de bits (BSET / BCLR / BRSET)
+; Dificultad: Intermedia
+; Conceptos: Operaciones a nivel de bit, máscaras, control de periféricos
+;
+; Simula el control de un motor en $0040:
+; - Bit 0 ($01): Encendido/Apagado del Motor
+; - Bit 1 ($02): Dirección de avance
+; - Bit 7 ($80): Sensor de fin de carrera
+;
+; 1. Limpia el puerto poniendo $00.
+; 2. Enciende el motor y fija avance con BSET (bits 0 y 1 = $03).
+; 3. Simula la llegada del móvil activando el sensor con BSET (bit 7 = $80).
+; 4. Comprueba si el sensor se activó con BRSET.
+; 5. Al detectar el tope, apaga el motor con BCLR (bit 0 = $01).
+; ==========================================================
+1 0000
+2 2000
+3 2000 7F 00 40 ; CLR $0040        - Apaga todo en el puerto $0040
+; --- Encendido del motor en avance (Bits 0 y 1) ---
+4 2003 14 40 03 ; BSET $40 $03     - Activa bits 0 y 1 (Motor ON y Avance)
+; --- Simulación: el sensor de fin de carrera se activa (Bit 7) ---
+5 2006 14 40 80 ; BSET $40 $80     - Simula sensor fin de carrera activado
+; --- Verificación con salto condicional de bit ---
+6 2009 12 40 80 03 ; BRSET $40 $80 $2010 - Si bit 7 está en 1, salta a DETENER
+; --- Si no estuviera activo, continuaría aquí ---
+7 200D 01       ; NOP              - Espera
+8 200E 01       ; NOP              - Espera
+9 200F 01       ; NOP
+; --- Detención del motor (Apaga solo bit 0, conserva otros) ---
+10 2010 15 40 01 ; BCLR $40 $01     - Apaga Bit 0 (Motor OFF). Deja sentido y sensor
+11 2013 7E 20 13 ; JMP $2013       - Bucle infinito de detención

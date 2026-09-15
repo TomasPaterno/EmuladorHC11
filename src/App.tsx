@@ -910,11 +910,11 @@ export function App() {
       )}
 
       {/* Main Split Body: Resizable 2 Columns */}
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-3 gap-0">
+      <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden p-3 gap-0">
         {/* Left Column: Loaded Program / File Viewer */}
         <div
           style={{ width: `${filePanelWidth}%` }}
-          className="w-full lg:w-auto h-1/2 lg:h-full flex flex-col overflow-hidden pr-0 lg:pr-1"
+          className="w-full lg:w-auto h-1/2 lg:h-full min-h-0 flex flex-col overflow-hidden pr-0 lg:pr-1"
         >
           <ProgramViewer
             fileName={programName}
@@ -957,7 +957,7 @@ export function App() {
         {/* Right Column: Reorderable Draggable Cards */}
         <div
           style={{ width: `${100 - filePanelWidth}%` }}
-          className="w-full lg:w-auto flex-1 h-1/2 lg:h-full flex flex-col gap-3 overflow-y-auto pl-0 lg:pl-1 pr-1"
+          className="w-full lg:w-auto flex-1 h-1/2 lg:h-full min-h-0 flex flex-col gap-3 overflow-y-auto pl-0 lg:pl-1 pr-1"
         >
           {blockOrder.map((id) => renderBlock(id))}
         </div>

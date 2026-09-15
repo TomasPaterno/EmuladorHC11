@@ -6,6 +6,8 @@ import {
   updateProgramLineAddress,
 } from "./programSync";
 import { disassembleHexStrings } from "./disassembler";
+import { ExamplesModal } from "./ExamplesModal";
+import { EXAMPLES } from "./examples";
 
 export const SAMPLE_PROGRAM_2000 = `1 0000
 2 2000
@@ -86,6 +88,7 @@ export function ProgramViewer({
   const [editing, setEditing] = useState<EditingCell | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const editInputRef = useRef<HTMLInputElement>(null);
+  const [isExamplesModalOpen, setIsExamplesModalOpen] = useState(false);
 
   useEffect(() => {
     if (editing && editInputRef.current) {
@@ -127,11 +130,17 @@ export function ProgramViewer({
   }, [lines, pc]);
 
   useEffect(() => {
-    if (autoScroll && activeLineRef.current) {
-      activeLineRef.current.scrollIntoView({
-        block: "nearest",
-        behavior: "smooth",
-      });
+    if (autoScroll && activeLineRef.current && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const row = activeLineRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const rowRect = row.getBoundingClientRect();
+
+      if (rowRect.top < containerRect.top + 32) {
+        container.scrollTop -= containerRect.top + 32 - rowRect.top;
+      } else if (rowRect.bottom > containerRect.bottom - 10) {
+        container.scrollTop += rowRect.bottom - containerRect.bottom + 32;
+      }
     }
   }, [activeLineIndex, autoScroll]);
 
@@ -209,7 +218,7 @@ export function ProgramViewer({
   return (
     <section
       aria-labelledby="program-viewer-title"
-      className="flex flex-col h-full rounded-xl border border-slate-800 bg-slate-900/60 shadow-xl overflow-hidden"
+      className="flex flex-col h-full min-h-0 rounded-xl border border-slate-800 bg-slate-900/60 shadow-xl overflow-hidden"
     >
       {/* File Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-900/90 px-4 py-3">
@@ -226,6 +235,15 @@ export function ProgramViewer({
               {fileName && (
                 <span className="rounded bg-emerald-500/20 px-1.5 py-0.2 text-[10px] font-semibold text-emerald-300">
                   Cargado
+                </span>
+              )}
+              {fileContent && pc !== null && activeLineIndex === -1 && (
+                <span
+                  className="rounded bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.5 text-[11px] font-mono font-medium text-amber-300 flex items-center gap-1.5"
+                  title={`El Program Counter (PC) se encuentra en la dirección $${hexWord(pc)}, fuera de las instrucciones del archivo cargado.`}
+                >
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                  PC: ${hexWord(pc)} (fuera de rango)
                 </span>
               )}
             </h2>
@@ -261,6 +279,14 @@ export function ProgramViewer({
           )}
           <button
             type="button"
+            onClick={() => setIsExamplesModalOpen(true)}
+            className="rounded border border-purple-400/60 bg-purple-500/20 hover:bg-purple-500/30 px-2.5 py-1 text-xs font-semibold text-purple-300 transition-colors cursor-pointer flex items-center gap-1.5"
+            title="Abrir catálogo de programas de ejemplo pedagógicos"
+          >
+            <span>📚</span> Ejemplos
+          </button>
+          <button
+            type="button"
             onClick={onOpenListing}
             className="rounded border border-amber-400/60 bg-amber-400/10 hover:bg-amber-400/20 px-2.5 py-1 text-xs font-semibold text-amber-300 transition-colors cursor-pointer"
           >
@@ -279,12 +305,12 @@ export function ProgramViewer({
       {/* Main Code Body */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto font-mono text-sm sm:text-base select-text bg-slate-950/70"
+        className="flex-1 min-h-0 overflow-auto font-mono text-sm sm:text-base select-text bg-slate-950/70 scrollbar-thin"
       >
         {lines.length > 0 ? (
           <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/40 text-xs sm:text-sm text-slate-400 select-none">
+            <thead className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 shadow-xs">
+              <tr className="bg-slate-900 text-xs sm:text-sm text-slate-400 select-none">
                 <th
                   scope="col"
                   className="w-14 px-2.5 py-1.5 text-right font-bold text-slate-300 border-r border-slate-800/80"
@@ -568,34 +594,43 @@ export function ProgramViewer({
               </button>
             </div>
 
-            <div className="mt-6 border-t border-slate-800/80 pt-4 w-full max-w-xs">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500 mb-2">
-                O pruebe un ejemplo integrado:
+            <div className="mt-6 border-t border-slate-800/80 pt-4 w-full max-w-sm">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 mb-2.5">
+                O pruebe un programa pedagógico integrado:
               </p>
-              <div className="flex justify-center gap-2">
+              <div className="flex flex-col gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    onLoadSample("programa-2000.lst", SAMPLE_PROGRAM_2000)
-                  }
-                  className="rounded border border-amber-500/40 bg-slate-900 px-2.5 py-1 text-xs text-amber-400 hover:bg-amber-400/10 transition-colors cursor-pointer"
+                  onClick={() => setIsExamplesModalOpen(true)}
+                  className="w-full rounded-lg border border-purple-400/50 bg-purple-500/15 hover:bg-purple-500/25 px-3 py-2 text-xs font-bold text-purple-200 transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
-                  programa-2000.lst
+                  <span>📚</span> Explorar Catálogo de Ejemplos (
+                  {EXAMPLES.length} disponibles)
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    onLoadSample("laboratorio-isa.lst", SAMPLE_LAB_ISA)
-                  }
-                  className="rounded border border-amber-500/40 bg-slate-900 px-2.5 py-1 text-xs text-amber-400 hover:bg-amber-400/10 transition-colors cursor-pointer"
-                >
-                  laboratorio-isa.lst
-                </button>
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  {EXAMPLES.slice(0, 4).map((ex) => (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() => onLoadSample(ex.filename, ex.code)}
+                      className="rounded border border-slate-700/80 bg-slate-900/90 hover:bg-slate-800 px-2 py-1.5 text-[11px] font-medium text-slate-300 hover:text-amber-300 transition-colors cursor-pointer text-left truncate"
+                      title={ex.title}
+                    >
+                      ▶ {ex.title}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      <ExamplesModal
+        isOpen={isExamplesModalOpen}
+        onClose={() => setIsExamplesModalOpen(false)}
+        onSelectExample={onLoadSample}
+      />
     </section>
   );
 }

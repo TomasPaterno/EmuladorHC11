@@ -1,0 +1,36 @@
+; ==========================================================
+; EJEMPLO 5: Búsqueda del Máximo en un Vector
+; Dificultad: Intermedia
+; Conceptos: Arreglos en RAM, punteros (IX), comparación sin signo (BHI)
+;
+; Busca el valor más grande en un arreglo de 5 elementos en $0060..$0064.
+; Datos del vector: [$12, $8A, $45, $9F, $33].
+; Guarda el valor máximo encontrado en la dirección de memoria $0070.
+; ==========================================================
+1 0000
+2 2000
+; --- Carga del vector en memoria RAM ($0060..$0064) ---
+3 2000 CE 00 60 ; LDX #$0060 - Puntero base del vector
+4 2003 86 12    ; LDAA #$12  - Elemento 0
+5 2005 A7 00    ; STAA 0,X
+6 2007 86 8A    ; LDAA #$8A  - Elemento 1
+7 2009 A7 01    ; STAA 1,X
+8 200B 86 45    ; LDAA #$45  - Elemento 2
+9 200D A7 02    ; STAA 2,X
+10 200F 86 9F   ; LDAA #$9F  - Elemento 3 (Máximo)
+11 2011 A7 03   ; STAA 3,X
+12 2013 86 33   ; LDAA #$33  - Elemento 4
+13 2015 A7 04   ; STAA 4,X
+; --- Algoritmo de búsqueda de máximo ---
+14 2017 A6 00   ; LDAA 0,X   - A = Máximo provisional (primer elemento $12)
+15 2019 C6 04   ; LDAB #$04  - B = 4 comparaciones restantes
+; --- Bucle de comparación ---
+16 201B 08      ; INX        - Avanza puntero al siguiente elemento
+17 201C A1 00   ; CMPA 0,X   - Compara MáximoActual (A) con ElementoActual (0,X)
+18 201E 22 02   ; BHI $2022  - Si MáximoActual > ElementoActual, mantiene A
+19 2020 A6 00   ; LDAA 0,X   - Si no, actualiza Máximo con el nuevo valor
+20 2022 5A      ; DECB       - Decrementa contador de elementos restantes
+21 2023 26 F6   ; BNE $201B  - Si quedan elementos por revisar, repite bucle
+; --- Almacenar resultado ---
+22 2025 97 70   ; STAA $70   - Guarda el valor máximo ($9F) en $0070
+23 2027 7E 20 27 ; JMP $2027 - Bucle infinito de detención

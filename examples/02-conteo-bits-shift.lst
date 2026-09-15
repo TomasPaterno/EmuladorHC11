@@ -1,0 +1,24 @@
+; ==========================================================
+; EJEMPLO 2: Conteo de bits en 1 mediante rotación/shift
+; Dificultad: Básica-Intermedia
+; Conceptos: Desplazamiento lógico (LSRA), bandera Carry (C), bucle
+;
+; Cuenta cuántos bits en '1' contiene un byte almacenado en $0050.
+; Por ejemplo, el dato de prueba $B7 (%10110111) contiene 6 unos.
+; El resultado se almacena en la dirección de memoria $0052.
+; ==========================================================
+1 0000
+2 2000
+3 2000 86 B7    ; LDAA #$B7  - Carga dato de prueba con 6 bits en '1'
+4 2002 97 50    ; STAA $50   - Guarda en variable de entrada $0050
+5 2004 5F       ; CLRB       - B = 0 (Contador de bits en 1 encontrados)
+6 2005 CE 00 08 ; LDX #$0008 - X = 8 (Contador de iteraciones / 8 bits)
+; --- Bucle de análisis bit a bit ---
+7 2008 44       ; LSRA       - Desplaza A a la derecha; bit 0 entra a Carry (C)
+8 2009 24 01    ; BCC $200C  - Si Carry=0, salta el incremento de B
+9 200B 5C       ; INCB       - Si Carry=1, incrementa el contador de unos
+10 200C 09      ; DEX        - Decrementa contador de bits restantes
+11 200D 26 F9   ; BNE $2008  - Si quedan bits (X != 0), repite bucle
+; --- Almacenar resultado ---
+12 200F D7 52   ; STAB $52   - Guarda el total de unos en memoria $0052
+13 2011 7E 20 11 ; JMP $2011 - Bucle infinito de detención

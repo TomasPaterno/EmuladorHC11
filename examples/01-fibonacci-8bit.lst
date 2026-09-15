@@ -1,0 +1,25 @@
+; ==========================================================
+; EJEMPLO 1: Sucesión de Fibonacci (8 bits)
+; Dificultad: Intermedia
+; Conceptos: Bucles, direccionamiento indexado (IX), suma en 8 bits
+;
+; Genera los primeros 13 números de Fibonacci en RAM ($0000..$000C):
+; 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233
+; (El término siguiente 377 excede el rango de 8 bits sin signo).
+; ==========================================================
+1 0000
+2 2000
+3 2000 CE 00 00 ; LDX #$0000 - Puntero base del arreglo en RAM
+4 2003 6F 00    ; CLR 0,X    - Fib(0) = 0
+5 2005 C6 01    ; LDAB #$01  - Valor inicial 1
+6 2007 E7 01    ; STAB 1,X   - Fib(1) = 1
+7 2009 C6 0B    ; LDAB #$0B  - Contador: 11 términos restantes
+; --- Bucle de suma secuencial ---
+8 200B A6 00    ; LDAA 0,X   - Carga Fib(i-2)
+9 200D AB 01    ; ADDA 1,X   - Suma Fib(i-1) -> A = Fib(i)
+10 200F A7 02   ; STAA 2,X   - Almacena Fib(i) en 2,X
+11 2011 08      ; INX        - Desplaza puntero al siguiente elemento
+12 2012 5A      ; DECB       - Decrementa contador de iteraciones
+13 2013 26 F6   ; BNE $200B  - Si no es cero, repite el bucle
+; --- Fin del programa ---
+14 2015 7E 20 15 ; JMP $2015 - Bucle infinito de detención

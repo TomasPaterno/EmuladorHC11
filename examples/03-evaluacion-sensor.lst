@@ -1,0 +1,25 @@
+; ==========================================================
+; EJEMPLO 3: Control de umbral de sensor y bifurcaciones
+; Dificultad: Básica
+; Conceptos: Comparaciones (CMPA), bifurcación condicional (BHS/BLO), E/S
+;
+; Simula la lectura de un sensor de temperatura en $0040.
+; Si Temperatura >= Umbral ($35 = 53°C), activa alarma ($0042 = $FF).
+; Si Temperatura < Umbral, apaga la alarma ($0042 = $00).
+; ==========================================================
+1 0000
+2 2000
+3 2000 86 3A    ; LDAA #$3A  - Simula lectura de sensor (58°C)
+4 2002 97 40    ; STAA $40   - Guarda lectura en sensor_in ($0040)
+5 2004 81 35    ; CMPA #$35  - Compara lectura con umbral crítico (53°C)
+6 2006 24 07    ; BHS $200F  - Si A >= $35 (Carry=0), salta a ALARMA
+; --- Caso Normal (Por debajo del umbral) ---
+7 2008 86 00    ; LDAA #$00  - Código de estado: Normal / Seguro
+8 200A 97 42    ; STAA $42   - Alarma apagada en $0042
+9 200C 7E 20 14 ; JMP $2014  - Salta al final
+; --- Caso Alarma (Umbral superado) ---
+10 200F 86 FF   ; LDAA #$FF  - Código de estado: Alarma activa
+11 2011 97 42   ; STAA $42   - Alarma encendida en $0042
+; --- Fin del programa ---
+12 2013 01      ; NOP        - Punto de sincronización
+13 2014 7E 20 14 ; JMP $2014 - Bucle infinito de detención

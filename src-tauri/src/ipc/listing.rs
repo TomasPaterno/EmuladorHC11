@@ -64,7 +64,11 @@ pub fn parse_listing(contents: &str) -> Result<ParsedListing, ListingError> {
 
     for raw_line in contents.lines() {
         let line = raw_line.trim();
-        if line.is_empty() {
+        if line.is_empty()
+            || line.starts_with(';')
+            || line.starts_with('*')
+            || line.starts_with('#')
+        {
             continue;
         }
         saw_line = true;
@@ -98,7 +102,14 @@ pub fn parse_listing(contents: &str) -> Result<ParsedListing, ListingError> {
 }
 
 fn parse_line(line: &str) -> Result<Option<Vec<(u16, u8)>>, ListingError> {
-    let tokens: Vec<&str> = line.split_whitespace().collect();
+    let code_part = match line.find([';', '*']) {
+        Some(idx) => line[..idx].trim(),
+        None => line,
+    };
+    if code_part.is_empty() {
+        return Ok(None);
+    }
+    let tokens: Vec<&str> = code_part.split_whitespace().collect();
     if tokens.len() < 2 {
         return Err(ListingError::Invalid);
     }
@@ -263,5 +274,82 @@ mod tests {
         }
         let error = parse_listing(&lines.join("\n")).expect_err("payload");
         assert!(matches!(error, ListingError::TooLarge { .. }));
+    }
+
+    #[test]
+    fn listing_with_comments_is_supported() {
+        let content = "\
+; Encabezado de comentario
+* Otro comentario Motorola
+1 0000 ; Origen
+2 2000
+3 2000 86 42 ; Carga 42 en acumulador A
+4 2002 97 00 ; Almacena en direccion $00
+";
+        let parsed = parse_listing(content).expect("listado con comentarios");
+        assert_eq!(parsed.summary.entry, 0x2000);
+        assert_eq!(parsed.summary.record_count, 2);
+        assert_eq!(
+            parsed.bytes,
+            vec![
+                (0x2000, 0x86),
+                (0x2001, 0x42),
+                (0x2002, 0x97),
+                (0x2003, 0x00)
+            ]
+        );
+    }
+
+    #[test]
+    fn all_repo_example_listings_parse_cleanly() {
+        let examples = [
+            include_str!("../../../examples/01-fibonacci-8bit.lst"),
+            include_str!("../../../examples/02-conteo-bits-shift.lst"),
+            include_str!("../../../examples/03-evaluacion-sensor.lst"),
+            include_str!("../../../examples/04-subrutinas-y-pila.lst"),
+            include_str!("../../../examples/05-maximo-vector.lst"),
+            include_str!("../../../examples/06-control-bits-hardware.lst"),
+        ];
+        for (i, ex) in examples.iter().enumerate() {
+            let parsed = parse_listing(ex).unwrap_or_else(|e| panic!("Ejemplo {i} falló: {e}"));
+            assert_eq!(parsed.summary.entry, 0x2000);
+            assert!(parsed.bytes.len() > 5);
+        }
+    }
+
+    #[test]
+    fn example_04_subroutines_and_stack_executes_to_completion() {
+        let content = include_str!("../../../examples/04-subrutinas-y-pila.lst");
+        let parsed = parse_listing(content).expect("ejemplo 04");
+        let mut machine = crate::core::Machine::new_e9();
+        machine.load_image(&parsed.bytes).expect("load_image");
+        machine.set_pc(parsed.summary.entry);
+
+        let mut steps = 0;
+        while machine.cpu().pc != 0x2019 && steps < 50 {
+            machine.step().expect("step");
+            steps += 1;
+        }
+
+        assert_eq!(
+            machine.cpu().pc,
+            0x2019,
+            "CPU should reach the final JMP $2019 loop"
+        );
+        assert_eq!(
+            machine.bus().read_byte(0x0032),
+            0x28,
+            "Result |Num1| + |Num2| in $0032 must be 40 ($28)"
+        );
+        assert_eq!(
+            machine.cpu().sp,
+            0x00FF,
+            "SP must return to its initial stack top ($00FF)"
+        );
+        assert_eq!(
+            machine.cpu().a,
+            0x28,
+            "Accumulator A should hold the final result ($28)"
+        );
     }
 }
