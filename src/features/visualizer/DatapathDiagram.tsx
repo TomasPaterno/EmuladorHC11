@@ -1,12 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CpuSnapshot, LastStep } from "../../ipc/emulator";
 import { InstructionSemantic } from "./instructionSemantics";
+
+export type DatapathLayoutMode = "auto" | "columns" | "stacked" | "compact";
 
 interface DatapathDiagramProps {
   semantic: InstructionSemantic | null;
   lastStep: LastStep | null;
   snapshot: CpuSnapshot | null;
   animated?: boolean;
+  layoutMode?: DatapathLayoutMode;
+  onLayoutModeChange?: (mode: DatapathLayoutMode) => void;
 }
 
 function hexByte(val: number): string {
@@ -22,8 +26,35 @@ export function DatapathDiagram({
   lastStep,
   snapshot,
   animated = true,
+  layoutMode = "auto",
+  onLayoutModeChange,
 }: DatapathDiagramProps) {
   const [showAllFlags, setShowAllFlags] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(800);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          setContainerWidth(entry.contentRect.width);
+        }
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const effectiveMode = useMemo<"columns" | "stacked" | "compact">(() => {
+    if (layoutMode !== "auto") {
+      return layoutMode;
+    }
+    if (containerWidth >= 680) return "columns";
+    if (containerWidth >= 480) return "stacked";
+    return "compact";
+  }, [layoutMode, containerWidth]);
 
   // Map of register changes
   const regChangesMap = useMemo(() => {
@@ -122,6 +153,7 @@ export function DatapathDiagram({
     name: string,
     width: "8" | "16",
     currentVal: number,
+    isCompact = false,
   ) => {
     const change = regChangesMap.get(name);
     const isModified = change !== undefined;
@@ -137,30 +169,389 @@ export function DatapathDiagram({
 
     return (
       <div
-        className={`p-2 rounded-lg border transition-all ${borderClass} flex flex-col justify-between`}
+        className={`rounded-lg border transition-all ${borderClass} flex flex-col justify-between min-w-0 overflow-hidden ${
+          isCompact ? "p-1.5" : "p-2"
+        }`}
       >
-        <div className="flex items-center justify-between gap-1 text-[11px] font-bold font-mono">
-          <span className="text-slate-400">{name}</span>
-          <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400">
+        <div className="flex items-center justify-between gap-1 text-[11px] font-bold font-mono min-w-0">
+          <span className="text-slate-400 shrink-0">{name}</span>
+          <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400 shrink-0 whitespace-nowrap">
             {width}-bit
           </span>
         </div>
-        <div className="mt-1 font-mono text-xs font-semibold flex items-center justify-between">
+        <div className="mt-1 font-mono text-xs font-semibold min-w-0">
           {isModified ? (
-            <div className="flex items-center gap-1 w-full justify-between">
-              <span className="text-slate-500 line-through text-[11px]">
+            <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5 w-full min-w-0">
+              <span className="text-slate-500 line-through text-[10px] sm:text-[11px] shrink-0">
                 ${width === "8" ? hexByte(change.from) : hexWord(change.from)}
               </span>
-              <span className="text-amber-400 text-[10px]">➜</span>
-              <span className="text-amber-300 font-bold">
+              <span className="text-amber-400 text-[10px] shrink-0">➜</span>
+              <span className="text-amber-300 font-bold text-[10px] sm:text-[11px] shrink-0">
                 ${width === "8" ? hexByte(change.to) : hexWord(change.to)}
               </span>
             </div>
           ) : (
-            <span className="text-slate-200">
+            <span className="text-slate-200 text-[11px] sm:text-xs truncate block">
               ${width === "8" ? hexByte(currentVal) : hexWord(currentVal)}
             </span>
           )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderRegisterBank = (mode: "columns" | "stacked" | "compact") => {
+    const isColumns = mode === "columns";
+    const isStacked = mode === "stacked";
+    const isCompact = mode === "compact";
+
+    return (
+      <div
+        className={`${
+          isColumns ? "md:col-span-4" : ""
+        } flex flex-col gap-2 rounded-xl border border-slate-800/80 bg-slate-900/50 ${
+          isCompact ? "p-2" : "p-2.5"
+        } min-w-0`}
+      >
+        <div className="text-[11px] font-bold text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
+          <span>Banco de Registros</span>
+          <span className="text-[10px] font-normal text-slate-500">
+            CPU Core
+          </span>
+        </div>
+
+        {isColumns && (
+          <>
+            <div className="grid grid-cols-2 gap-1.5 min-w-0">
+              {renderRegBox("A", "8", snapshot.a)}
+              {renderRegBox("B", "8", snapshot.b)}
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 min-w-0">
+              {renderRegBox("X", "16", snapshot.x)}
+              {renderRegBox("Y", "16", snapshot.y)}
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 min-w-0">
+              {renderRegBox("SP", "16", snapshot.sp)}
+              {renderRegBox("PC", "16", snapshot.pc)}
+            </div>
+          </>
+        )}
+
+        {isStacked && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 min-w-0">
+            {renderRegBox("A", "8", snapshot.a)}
+            {renderRegBox("B", "8", snapshot.b)}
+            {renderRegBox("X", "16", snapshot.x)}
+            {renderRegBox("Y", "16", snapshot.y)}
+            {renderRegBox("SP", "16", snapshot.sp)}
+            {renderRegBox("PC", "16", snapshot.pc)}
+          </div>
+        )}
+
+        {isCompact && (
+          <div className="grid grid-cols-3 gap-1.5 min-w-0">
+            {renderRegBox("A", "8", snapshot.a, true)}
+            {renderRegBox("B", "8", snapshot.b, true)}
+            {renderRegBox("X", "16", snapshot.x, true)}
+            {renderRegBox("Y", "16", snapshot.y, true)}
+            {renderRegBox("SP", "16", snapshot.sp, true)}
+            {renderRegBox("PC", "16", snapshot.pc, true)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderBusAlu = (mode: "columns" | "stacked" | "compact") => {
+    const isColumns = mode === "columns";
+    const isCompact = mode === "compact";
+
+    return (
+      <div
+        className={`${
+          isColumns ? "md:col-span-4" : ""
+        } flex flex-col justify-between rounded-xl border border-slate-800/80 bg-slate-900/40 ${
+          isCompact ? "p-2" : "p-2.5"
+        } min-w-0`}
+      >
+        <div className="text-[11px] font-bold text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
+          <span>Bus del Sistema & ALU</span>
+          <span className="text-[10px] font-normal text-slate-500">
+            Control
+          </span>
+        </div>
+
+        {/* Visual Bus Line with Animation */}
+        <div
+          className={`my-2 flex flex-col items-center justify-center p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 ${
+            isCompact ? "min-h-[70px]" : "min-h-[90px]"
+          } min-w-0 w-full`}
+        >
+          <div className="w-full flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400 font-mono mb-1.5 min-w-0">
+            <span className="font-bold shrink-0">DATAPATH</span>
+            <span className="text-amber-400 font-semibold truncate min-w-0">
+              {isReadFlow
+                ? "BUS DE DATOS ➜ CPU"
+                : isWriteFlow
+                  ? "CPU ➜ BUS DE DATOS"
+                  : isInternalFlow
+                    ? "BUS INTERNO CPU"
+                    : isBranchOrJump
+                      ? "CONTROL DEL PC"
+                      : "INACTIVO"}
+            </span>
+          </div>
+
+          {/* Animated SVG Bus Wire */}
+          <svg
+            className={`w-full ${isCompact ? "h-7" : "h-10"} overflow-visible`}
+            viewBox="0 0 200 40"
+          >
+            <defs>
+              <marker
+                id="arrow-right"
+                viewBox="0 0 10 10"
+                refX="6"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto"
+              >
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#a855f7" />
+              </marker>
+              <marker
+                id="arrow-left"
+                viewBox="0 0 10 10"
+                refX="4"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto"
+              >
+                <path d="M 8 1 L 0 5 L 8 9 z" fill="#06b6d4" />
+              </marker>
+            </defs>
+
+            {/* Background line */}
+            <line
+              x1="10"
+              y1="20"
+              x2="190"
+              y2="20"
+              stroke="#334155"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+
+            {/* Animated active flow line */}
+            {isReadFlow && (
+              <line
+                x1="190"
+                y1="20"
+                x2="15"
+                y2="20"
+                stroke="#06b6d4"
+                strokeWidth="3.5"
+                strokeDasharray="6 4"
+                strokeLinecap="round"
+                markerEnd="url(#arrow-left)"
+                className={animated ? "animate-pulse" : ""}
+                style={{
+                  animation: animated
+                    ? "busFlowLeft 0.8s linear infinite"
+                    : "none",
+                }}
+              />
+            )}
+
+            {isWriteFlow && (
+              <line
+                x1="10"
+                y1="20"
+                x2="185"
+                y2="20"
+                stroke="#a855f7"
+                strokeWidth="3.5"
+                strokeDasharray="6 4"
+                strokeLinecap="round"
+                markerEnd="url(#arrow-right)"
+                className={animated ? "animate-pulse" : ""}
+                style={{
+                  animation: animated
+                    ? "busFlowRight 0.8s linear infinite"
+                    : "none",
+                }}
+              />
+            )}
+
+            {isInternalFlow && (
+              <path
+                d="M 20 20 Q 100 5 180 20"
+                fill="none"
+                stroke="#f59e0b"
+                strokeWidth="3"
+                strokeDasharray="5 3"
+                className={animated ? "animate-pulse" : ""}
+              />
+            )}
+
+            {isBranchOrJump && (
+              <line
+                x1="20"
+                y1="20"
+                x2="180"
+                y2="20"
+                stroke="#3b82f6"
+                strokeWidth="3"
+                strokeDasharray="4 4"
+                className={animated ? "animate-pulse" : ""}
+              />
+            )}
+          </svg>
+
+          <div className="text-[10px] text-slate-500 text-center mt-1 truncate max-w-full">
+            {isReadFlow && "Lectura: Memoria/Inmediato ➔ CPU"}
+            {isWriteFlow && "Escritura: CPU ➔ Memoria / Pila"}
+            {isInternalFlow && "Transferencia / Operación interna"}
+            {isBranchOrJump && "Actualización de dirección de salto"}
+            {!isReadFlow &&
+              !isWriteFlow &&
+              !isInternalFlow &&
+              !isBranchOrJump &&
+              "Sin transferencia externa"}
+          </div>
+        </div>
+
+        {/* ALU Trapezoid Block */}
+        <div
+          className={`${
+            isCompact ? "p-2" : "p-2.5"
+          } rounded-lg border transition-all min-w-0 ${
+            semantic.category === "ALU"
+              ? "border-amber-500 bg-amber-950/30 text-amber-200"
+              : "border-slate-800 bg-slate-950/40 text-slate-400"
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] font-mono font-bold">
+            <span className="shrink-0">ALU (Unidad Aritmética)</span>
+            <span
+              className={`text-[9px] px-1.5 py-0.5 rounded shrink-0 ${
+                semantic.category === "ALU"
+                  ? "bg-amber-400 text-slate-950 font-bold"
+                  : "bg-slate-800 text-slate-400"
+              }`}
+            >
+              {semantic.category === "ALU" ? "ACTIVA" : "PASO DIRECTO"}
+            </span>
+          </div>
+          <div className="mt-1 text-xs font-mono font-semibold">
+            Op:{" "}
+            <span className="text-slate-200">
+              {semantic.mnemonic.toUpperCase()}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMemory = (mode: "columns" | "stacked" | "compact") => {
+    const isColumns = mode === "columns";
+    const isCompact = mode === "compact";
+
+    return (
+      <div
+        className={`${
+          isColumns ? "md:col-span-4" : ""
+        } flex flex-col justify-between rounded-xl border border-slate-800/80 bg-slate-900/50 ${
+          isCompact ? "p-2" : "p-2.5"
+        } min-w-0`}
+      >
+        <div className="text-[11px] font-bold text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
+          <span>Destino / Memoria</span>
+          <span className="text-[10px] font-normal text-slate-500">
+            Bus Externo
+          </span>
+        </div>
+
+        {/* Target Address Card */}
+        <div
+          className={`my-auto flex flex-col gap-1.5 ${
+            isCompact ? "p-2" : "p-2.5"
+          } rounded-lg bg-slate-950/70 border border-slate-800 min-w-0`}
+        >
+          <div className="text-[10px] text-slate-500 uppercase font-mono">
+            {semantic.category === "STACK"
+              ? "Pila (Stack RAM)"
+              : semantic.memoryAddress !== undefined
+                ? "Dirección Efectiva"
+                : "Operando"}
+          </div>
+
+          {semantic.memoryAddress !== undefined ? (
+            <div className="min-w-0">
+              <div className="font-mono text-sm font-bold text-slate-200 flex items-center justify-between gap-1 min-w-0">
+                <span>${hexWord(semantic.memoryAddress)}</span>
+                <span className="text-[10px] font-normal text-slate-400 px-1.5 py-0.5 rounded bg-slate-800 shrink-0">
+                  {semantic.memoryAddress < 0x0040
+                    ? "RAM Directa"
+                    : semantic.memoryAddress < 0x00ff
+                      ? "Pila / RAM"
+                      : semantic.memoryAddress < 0x1000
+                        ? "RAM Ext"
+                        : semantic.memoryAddress <= 0x103f
+                          ? "Reg I/O"
+                          : "Memoria"}
+                </span>
+              </div>
+
+              {/* Value changes on store or read on load */}
+              {semantic.memoryNewValue !== undefined && (
+                <div className="mt-2 text-xs font-mono flex flex-wrap items-center justify-between gap-1 p-1.5 rounded bg-purple-950/30 border border-purple-500/40 text-purple-200 min-w-0">
+                  <span className="text-[11px] text-purple-300 shrink-0">
+                    Escritura:
+                  </span>
+                  {semantic.memoryOldValue !== undefined ? (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-slate-500 line-through">
+                        ${hexByte(semantic.memoryOldValue)}
+                      </span>
+                      <span className="text-purple-400">➜</span>
+                      <span className="font-bold text-purple-200">
+                        ${hexByte(semantic.memoryNewValue)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="font-bold shrink-0">
+                      ${hexByte(semantic.memoryNewValue)}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {semantic.category === "LOAD" && (
+                <div className="mt-2 text-xs font-mono p-1.5 rounded bg-cyan-950/30 border border-cyan-500/40 text-cyan-200 min-w-0">
+                  <span className="text-[11px] text-cyan-300">
+                    Leído de memoria hacia CPU
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-slate-400 italic py-2 text-center">
+              {semantic.sourceBlock === "IMMEDIATE"
+                ? "Valor Inmediato (#)"
+                : semantic.category === "BRANCH" || semantic.category === "JUMP"
+                  ? "Salto relativo / absoluto"
+                  : "Operación interna en registros"}
+            </div>
+          )}
+        </div>
+
+        {/* Instruction Byte Count & Timing */}
+        <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/80">
+          <span>Bytes: {lastStep.bytes.length}</span>
+          <span>Ciclos: +{lastStep.cyclesAdded}</span>
         </div>
       </div>
     );
@@ -171,7 +562,7 @@ export function DatapathDiagram({
       {/* 1. Natural Language Instruction Banner */}
       <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span
               className={`px-2.5 py-0.5 rounded-full font-mono text-xs font-bold border ${categoryColorClass}`}
             >
@@ -204,7 +595,7 @@ export function DatapathDiagram({
         {/* Branch decision banner if branch */}
         {semantic.branch?.isBranch && (
           <div
-            className={`mt-2.5 p-2 rounded-lg border text-xs font-medium flex items-center justify-between gap-2 ${
+            className={`mt-2.5 p-2 rounded-lg border text-xs font-medium flex flex-wrap items-center justify-between gap-2 ${
               semantic.branch.taken
                 ? "bg-emerald-950/40 border-emerald-500/50 text-emerald-200"
                 : "bg-slate-800/60 border-slate-700/80 text-slate-300"
@@ -233,9 +624,46 @@ export function DatapathDiagram({
       </div>
 
       {/* 2. Interactive Datapath Diagram Canvas */}
-      <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5">
-        <div className="flex items-center justify-between mb-3 text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-          <span>Ruta de Datos de la CPU</span>
+      <div
+        ref={containerRef}
+        className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5 min-w-0"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+          <div className="flex items-center gap-2">
+            <span>Ruta de Datos de la CPU</span>
+            {onLayoutModeChange ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const nextMode: DatapathLayoutMode =
+                    layoutMode === "auto"
+                      ? "columns"
+                      : layoutMode === "columns"
+                        ? "stacked"
+                        : layoutMode === "stacked"
+                          ? "compact"
+                          : "auto";
+                  onLayoutModeChange(nextMode);
+                }}
+                className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono normal-case tracking-normal transition-colors cursor-pointer"
+                title="Haz clic para alternar modo de vista (Auto ➔ 3 Cols ➔ Apilada ➔ Compacta)"
+              >
+                {effectiveMode === "columns"
+                  ? "3 columnas"
+                  : effectiveMode === "stacked"
+                    ? "vista apilada"
+                    : "vista compacta"}
+              </button>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono normal-case tracking-normal">
+                {effectiveMode === "columns"
+                  ? "3 columnas"
+                  : effectiveMode === "stacked"
+                    ? "vista apilada"
+                    : "vista compacta"}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2 font-normal lowercase tracking-normal">
             <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
               <span className="w-2 h-2 rounded-full bg-amber-400"></span>{" "}
@@ -247,293 +675,34 @@ export function DatapathDiagram({
           </div>
         </div>
 
-        {/* 3-Column Architecture: Registers | Bus & ALU | Memory Interface */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-stretch">
-          {/* Left Column: Register Bank (Cols 1-4) */}
-          <div className="md:col-span-4 flex flex-col gap-2 rounded-xl border border-slate-800/80 bg-slate-900/50 p-2.5">
-            <div className="text-[11px] font-bold text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
-              <span>Banco de Registros</span>
-              <span className="text-[10px] font-normal text-slate-500">
-                CPU Core
-              </span>
-            </div>
+        {/* Responsive Architecture Layout */}
+        {effectiveMode === "columns" && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-stretch min-w-0">
+            {renderRegisterBank("columns")}
+            {renderBusAlu("columns")}
+            {renderMemory("columns")}
+          </div>
+        )}
 
-            <div className="grid grid-cols-2 gap-1.5">
-              {renderRegBox("A", "8", snapshot.a)}
-              {renderRegBox("B", "8", snapshot.b)}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {renderRegBox("X", "16", snapshot.x)}
-              {renderRegBox("Y", "16", snapshot.y)}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {renderRegBox("SP", "16", snapshot.sp)}
-              {renderRegBox("PC", "16", snapshot.pc)}
+        {effectiveMode === "stacked" && (
+          <div className="flex flex-col gap-3 min-w-0">
+            {renderRegisterBank("stacked")}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+              {renderBusAlu("stacked")}
+              {renderMemory("stacked")}
             </div>
           </div>
+        )}
 
-          {/* Center Column: System Bus & ALU (Cols 5-8) */}
-          <div className="md:col-span-4 flex flex-col justify-between rounded-xl border border-slate-800/80 bg-slate-900/40 p-2.5">
-            <div className="text-[11px] font-bold text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
-              <span>Bus del Sistema & ALU</span>
-              <span className="text-[10px] font-normal text-slate-500">
-                Control
-              </span>
-            </div>
-
-            {/* Visual Bus Line with Animation */}
-            <div className="my-2 flex flex-col items-center justify-center p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 min-h-[90px]">
-              <div className="w-full flex items-center justify-between text-[10px] text-slate-400 font-mono mb-1.5">
-                <span>DATAPATH</span>
-                <span className="text-amber-400">
-                  {isReadFlow
-                    ? "BUS DE DATOS ➜ CPU"
-                    : isWriteFlow
-                      ? "CPU ➜ BUS DE DATOS"
-                      : isInternalFlow
-                        ? "BUS INTERNO CPU"
-                        : isBranchOrJump
-                          ? "CONTROL DEL PC"
-                          : "INACTIVO"}
-                </span>
-              </div>
-
-              {/* Animated SVG Bus Wire */}
-              <svg
-                className="w-full h-10 overflow-visible"
-                viewBox="0 0 200 40"
-              >
-                <defs>
-                  <marker
-                    id="arrow-right"
-                    viewBox="0 0 10 10"
-                    refX="6"
-                    refY="5"
-                    markerWidth="6"
-                    markerHeight="6"
-                    orient="auto"
-                  >
-                    <path d="M 0 1 L 8 5 L 0 9 z" fill="#a855f7" />
-                  </marker>
-                  <marker
-                    id="arrow-left"
-                    viewBox="0 0 10 10"
-                    refX="4"
-                    refY="5"
-                    markerWidth="6"
-                    markerHeight="6"
-                    orient="auto"
-                  >
-                    <path d="M 8 1 L 0 5 L 8 9 z" fill="#06b6d4" />
-                  </marker>
-                </defs>
-
-                {/* Background line */}
-                <line
-                  x1="10"
-                  y1="20"
-                  x2="190"
-                  y2="20"
-                  stroke="#334155"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-
-                {/* Animated active flow line */}
-                {isReadFlow && (
-                  <line
-                    x1="190"
-                    y1="20"
-                    x2="15"
-                    y2="20"
-                    stroke="#06b6d4"
-                    strokeWidth="3.5"
-                    strokeDasharray="6 4"
-                    strokeLinecap="round"
-                    markerEnd="url(#arrow-left)"
-                    className={animated ? "animate-pulse" : ""}
-                    style={{
-                      animation: animated
-                        ? "busFlowLeft 0.8s linear infinite"
-                        : "none",
-                    }}
-                  />
-                )}
-
-                {isWriteFlow && (
-                  <line
-                    x1="10"
-                    y1="20"
-                    x2="185"
-                    y2="20"
-                    stroke="#a855f7"
-                    strokeWidth="3.5"
-                    strokeDasharray="6 4"
-                    strokeLinecap="round"
-                    markerEnd="url(#arrow-right)"
-                    className={animated ? "animate-pulse" : ""}
-                    style={{
-                      animation: animated
-                        ? "busFlowRight 0.8s linear infinite"
-                        : "none",
-                    }}
-                  />
-                )}
-
-                {isInternalFlow && (
-                  <path
-                    d="M 20 20 Q 100 5 180 20"
-                    fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="3"
-                    strokeDasharray="5 3"
-                    className={animated ? "animate-pulse" : ""}
-                  />
-                )}
-
-                {isBranchOrJump && (
-                  <line
-                    x1="20"
-                    y1="20"
-                    x2="180"
-                    y2="20"
-                    stroke="#3b82f6"
-                    strokeWidth="3"
-                    strokeDasharray="4 4"
-                    className={animated ? "animate-pulse" : ""}
-                  />
-                )}
-              </svg>
-
-              <div className="text-[10px] text-slate-500 text-center mt-1">
-                {isReadFlow && "Lectura: Memoria/Inmediato ➔ CPU"}
-                {isWriteFlow && "Escritura: CPU ➔ Memoria / Pila"}
-                {isInternalFlow && "Transferencia / Operación interna"}
-                {isBranchOrJump && "Actualización de dirección de salto"}
-                {!isReadFlow &&
-                  !isWriteFlow &&
-                  !isInternalFlow &&
-                  !isBranchOrJump &&
-                  "Sin transferencia externa"}
-              </div>
-            </div>
-
-            {/* ALU Trapezoid Block */}
-            <div
-              className={`p-2.5 rounded-lg border transition-all ${
-                semantic.category === "ALU"
-                  ? "border-amber-500 bg-amber-950/30 text-amber-200"
-                  : "border-slate-800 bg-slate-950/40 text-slate-400"
-              }`}
-            >
-              <div className="flex items-center justify-between text-[11px] font-mono font-bold">
-                <span>ALU (Unidad Aritmética)</span>
-                <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded ${
-                    semantic.category === "ALU"
-                      ? "bg-amber-400 text-slate-950 font-bold"
-                      : "bg-slate-800 text-slate-400"
-                  }`}
-                >
-                  {semantic.category === "ALU" ? "ACTIVA" : "PASO DIRECTO"}
-                </span>
-              </div>
-              <div className="mt-1 text-xs font-mono font-semibold">
-                Op:{" "}
-                <span className="text-slate-200">
-                  {semantic.mnemonic.toUpperCase()}
-                </span>
-              </div>
+        {effectiveMode === "compact" && (
+          <div className="flex flex-col gap-2 min-w-0">
+            {renderRegisterBank("compact")}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
+              {renderBusAlu("compact")}
+              {renderMemory("compact")}
             </div>
           </div>
-
-          {/* Right Column: Memory & Target Bus (Cols 9-12) */}
-          <div className="md:col-span-4 flex flex-col justify-between rounded-xl border border-slate-800/80 bg-slate-900/50 p-2.5">
-            <div className="text-[11px] font-bold text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
-              <span>Destino / Memoria</span>
-              <span className="text-[10px] font-normal text-slate-500">
-                Bus Externo
-              </span>
-            </div>
-
-            {/* Target Address Card */}
-            <div className="my-auto flex flex-col gap-2 p-2.5 rounded-lg bg-slate-950/70 border border-slate-800">
-              <div className="text-[10px] text-slate-500 uppercase font-mono">
-                {semantic.category === "STACK"
-                  ? "Pila (Stack RAM)"
-                  : semantic.memoryAddress !== undefined
-                    ? "Dirección Efectiva"
-                    : "Operando"}
-              </div>
-
-              {semantic.memoryAddress !== undefined ? (
-                <div>
-                  <div className="font-mono text-sm font-bold text-slate-200 flex items-center justify-between">
-                    <span>${hexWord(semantic.memoryAddress)}</span>
-                    <span className="text-[10px] font-normal text-slate-400 px-1.5 py-0.5 rounded bg-slate-800">
-                      {semantic.memoryAddress < 0x0040
-                        ? "RAM Directa"
-                        : semantic.memoryAddress < 0x00ff
-                          ? "Pila / RAM"
-                          : semantic.memoryAddress < 0x1000
-                            ? "RAM Ext"
-                            : semantic.memoryAddress <= 0x103f
-                              ? "Reg I/O"
-                              : "Memoria"}
-                    </span>
-                  </div>
-
-                  {/* Value changes on store or read on load */}
-                  {semantic.memoryNewValue !== undefined && (
-                    <div className="mt-2 text-xs font-mono flex items-center justify-between p-1.5 rounded bg-purple-950/30 border border-purple-500/40 text-purple-200">
-                      <span className="text-[11px] text-purple-300">
-                        Escritura:
-                      </span>
-                      {semantic.memoryOldValue !== undefined ? (
-                        <div className="flex items-center gap-1">
-                          <span className="text-slate-500 line-through">
-                            ${hexByte(semantic.memoryOldValue)}
-                          </span>
-                          <span className="text-purple-400">➜</span>
-                          <span className="font-bold text-purple-200">
-                            ${hexByte(semantic.memoryNewValue)}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="font-bold">
-                          ${hexByte(semantic.memoryNewValue)}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {semantic.category === "LOAD" && (
-                    <div className="mt-2 text-xs font-mono p-1.5 rounded bg-cyan-950/30 border border-cyan-500/40 text-cyan-200">
-                      <span className="text-[11px] text-cyan-300">
-                        Leído de memoria hacia CPU
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-xs text-slate-400 italic py-2 text-center">
-                  {semantic.sourceBlock === "IMMEDIATE"
-                    ? "Valor Inmediato (#)"
-                    : semantic.category === "BRANCH" ||
-                        semantic.category === "JUMP"
-                      ? "Salto relativo / absoluto"
-                      : "Operación interna en registros"}
-                </div>
-              )}
-            </div>
-
-            {/* Instruction Byte Count & Timing */}
-            <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/80">
-              <span>Bytes: {lastStep.bytes.length}</span>
-              <span>Ciclos: +{lastStep.cyclesAdded}</span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 3. CCR Flags Detail & Explanations */}
@@ -557,7 +726,7 @@ export function DatapathDiagram({
         </div>
 
         {/* Flag Badges Strip */}
-        <div className="grid grid-cols-8 gap-1.5">
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
           {(["S", "X", "H", "I", "N", "Z", "V", "C"] as const).map((flag) => {
             const flagKey =
               flag.toLowerCase() as keyof typeof snapshot.ccrFlags;
